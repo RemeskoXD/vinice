@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>V srdci vinice | Ubytování Mutěnice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700&display=swap');
+      
+      body {
+        font-family: 'Montserrat', sans-serif;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* --- Custom Scrollbar --- */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #ffffff; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #e5e7eb; 
+        border-radius: 0px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #000000; 
+      }
+
+      /* --- Global Image Optimization --- */
+      img {
+        /* Prevents flickering/blurring during transforms on mobile */
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        transform: translateZ(0); 
+        -webkit-user-drag: none;
+      }
+
+      /* --- Animations --- */
+      .animate-fade-in-up {
+        animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+        will-change: opacity, transform;
+      }
+
+      /* Ken Burns Effect - Optimized for GPU */
+      @keyframes kenBurns {
+        0% { transform: scale(1) translateZ(0); }
+        100% { transform: scale(1.15) translateZ(0); }
+      }
+      
+      .animate-ken-burns {
+        animation: kenBurns 25s ease-out infinite alternate;
+        will-change: transform;
+        transform-origin: center center;
+      }
+      
+      /* Helper Delays */
+      .delay-100 { animation-delay: 0.1s; }
+      .delay-200 { animation-delay: 0.2s; }
+      .delay-300 { animation-delay: 0.3s; }
+      .delay-500 { animation-delay: 0.5s; }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px); /* Reduced movement for smoother mobile feel */
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Luxury Hover Effect for Images - Hardware Accelerated */
+      .hover-zoom-image {
+        transition: transform 1.5s cubic-bezier(0.19, 1, 0.22, 1);
+        will-change: transform;
+      }
+      
+      /* Tailored Group Hover for Tailwind Classes */
+      .group:hover img {
+        will-change: transform;
+      }
+      
+      .group:hover .hover-zoom-image {
+        transform: scale(1.08) translateZ(0);
+      }
+      
+      /* Smooth Scrolling */
+      html {
+        scroll-behavior: smooth;
+      }
+
+      /* Respect User Motion Preferences (Accessibility & Battery Saver) */
+      @media (prefers-reduced-motion: reduce) {
+        *, ::before, ::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+        .animate-ken-burns {
+          animation: none;
+          transform: scale(1.05); /* Static nice crop instead of moving */
+        }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.11.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-white text-slate-900 antialiased selection:bg-amber-500 selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
