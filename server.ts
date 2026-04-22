@@ -15,7 +15,9 @@ db.exec(`
     endDate TEXT NOT NULL,
     customerName TEXT,
     customerEmail TEXT,
-    status TEXT DEFAULT 'confirmed' -- 'confirmed', 'pending', 'cancelled'
+    customerPhone TEXT,
+    notes TEXT,
+    status TEXT DEFAULT 'pending' -- 'confirmed', 'pending', 'cancelled'
   )
 `);
 
@@ -29,7 +31,7 @@ async function startServer() {
   // API Routes
   app.get('/api/bookings', (req, res) => {
     try {
-      const bookings = db.prepare('SELECT * FROM bookings').all();
+      const bookings = db.prepare('SELECT * FROM bookings ORDER BY startDate DESC').all();
       res.json(bookings);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch bookings' });
@@ -37,10 +39,10 @@ async function startServer() {
   });
 
   app.post('/api/bookings', (req, res) => {
-    const { startDate, endDate, customerName, customerEmail } = req.body;
+    const { startDate, endDate, customerName, customerEmail, customerPhone, notes } = req.body;
     try {
-      const stmt = db.prepare('INSERT INTO bookings (startDate, endDate, customerName, customerEmail) VALUES (?, ?, ?, ?)');
-      const info = stmt.run(startDate, endDate, customerName, customerEmail);
+      const stmt = db.prepare('INSERT INTO bookings (startDate, endDate, customerName, customerEmail, customerPhone, notes) VALUES (?, ?, ?, ?, ?, ?)');
+      const info = stmt.run(startDate, endDate, customerName, customerEmail, customerPhone || '', notes || '');
       res.json({ id: info.lastInsertRowid, success: true });
     } catch (error) {
       res.status(500).json({ error: 'Failed to create booking' });

@@ -5,6 +5,7 @@ import { Reveal } from './Reveal';
 
 // Page Imports
 import HomePage from './pages/Home';
+import EventsPage from './pages/Events';
 import GalleryPage from './pages/Gallery';
 import PricingPage from './pages/Pricing';
 import TipsPage from './pages/Tips';
@@ -12,6 +13,8 @@ import ReservationPage from './pages/Reservation';
 import AdminPage from './pages/Admin';
 
 // --- HELPERS ---
+import Logo from './components/Logo';
+
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -37,6 +40,7 @@ const Navbar: React.FC = () => {
 
   const links = [
     { label: 'Domů', path: '/' },
+    { label: 'Akce', path: '/akce' },
     { label: 'Galerie', path: '/galerie' },
     { label: 'Ceník', path: '/cenik' },
     { label: 'Tipy na výlety', path: '/tipy' },
@@ -45,16 +49,16 @@ const Navbar: React.FC = () => {
 
   const isActive = (path: string) => {
     if (path === '/' && location.pathname !== '/') return false;
-    return location.pathname.startsWith(path);
+    return location.pathname === path;
   };
 
   const isHome = location.pathname === '/';
   
   const navClasses = isScrolled || !isHome 
-    ? 'bg-white border-b border-gray-100 py-4 text-black' 
-    : 'bg-transparent py-8 text-white';
+    ? 'bg-white/95 backdrop-blur-sm border-b border-gray-100 py-3 text-black' 
+    : 'bg-transparent py-6 text-white';
 
-  const logoColor = isScrolled || !isHome ? 'text-black' : 'text-white';
+  const logoColor = isScrolled || !isHome ? 'text-amber-900 font-bold' : 'text-white';
   const burgerColor = isScrolled || !isHome ? 'text-black' : 'text-white';
 
   return (
@@ -64,34 +68,43 @@ const Navbar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center gap-4 group">
-              <div className={`w-10 h-10 flex items-center justify-center font-serif text-xl border transition-all duration-500 ${isScrolled || !isHome ? 'border-amber-700 text-amber-700' : 'border-white text-white'}`}>V</div>
+              <Logo isScrolled={isScrolled} isHome={isHome} className="w-12 h-12 transition-transform duration-500 group-hover:scale-110" />
               <div className="flex flex-col">
-                <span className={`font-serif text-xl tracking-[0.2em] leading-none uppercase ${logoColor}`}>
-                  V SRDCI VINICE
+                <span className={`font-serif text-lg md:text-xl tracking-[0.1em] leading-none uppercase transition-colors duration-500 ${logoColor}`}>
+                  V SRDCI VINIC
                 </span>
               </div>
             </Link>
           </div>
           
           {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center space-x-12">
+          <div className="hidden lg:flex items-center space-x-8 xl:space-x-12">
             {links.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`text-xs font-bold uppercase tracking-[0.15em] transition-colors duration-300 relative group py-2 ${
+                className={`text-[11px] font-bold uppercase tracking-[0.15em] transition-all duration-300 relative group py-2 ${
                   isActive(link.path) 
-                    ? 'text-amber-600' 
-                    : (isScrolled || !isHome ? 'text-gray-500 hover:text-black' : 'text-gray-300 hover:text-white')
+                    ? 'text-amber-700' 
+                    : (isScrolled || !isHome ? 'text-gray-600 hover:text-black' : 'text-gray-100 hover:text-white hover:scale-105')
                 }`}
               >
                 {link.label}
+                <span className={`absolute bottom-0 left-0 h-0.5 bg-amber-700 transition-all duration-300 ${isActive(link.path) ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
               </Link>
             ))}
+            
+            {/* Socials in Desktop Nav */}
+            <div className="flex items-center space-x-4 pl-4 border-l border-gray-200">
+               <a href="https://facebook.com" target="_blank" rel="noreferrer" className="hover:text-amber-600 transition-colors"><Facebook size={18} strokeWidth={1.5} /></a>
+               <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-amber-600 transition-colors"><Instagram size={18} strokeWidth={1.5} /></a>
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex items-center lg:hidden">
+          <div className="flex items-center lg:hidden gap-4">
+            <a href="https://facebook.com" target="_blank" rel="noreferrer" className={`${burgerColor} hover:text-amber-600 transition-colors shrink-0`}><Facebook size={20} strokeWidth={1.5} /></a>
+            <a href="https://instagram.com" target="_blank" rel="noreferrer" className={`${burgerColor} hover:text-amber-600 transition-colors shrink-0`}><Instagram size={20} strokeWidth={1.5} /></a>
             <button
               onClick={() => setIsOpen(!isOpen)}
               className={`inline-flex items-center justify-center p-2 transition-colors ${burgerColor}`}
@@ -103,15 +116,15 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Mobile Menu Overlay */}
-      <div className={`fixed inset-0 bg-white z-40 transform transition-transform duration-500 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'} lg:hidden flex flex-col pt-32 px-8`}>
-        <div className="flex flex-col space-y-8">
+      <div className={`fixed inset-0 bg-white z-40 transform transition-transform duration-500 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'} lg:hidden flex flex-col pt-32 px-8 overflow-y-auto`}>
+        <div className="flex flex-col space-y-6">
             {links.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
                 onClick={() => setIsOpen(false)}
-                className={`text-2xl font-light uppercase tracking-widest ${
-                  isActive(link.path) ? 'text-amber-600' : 'text-black'
+                className={`text-2xl font-serif uppercase tracking-widest border-b border-gray-50 pb-4 ${
+                  isActive(link.path) ? 'text-amber-700 font-bold' : 'text-black'
                 }`}
               >
                 {link.label}
@@ -129,14 +142,14 @@ const Footer: React.FC = () => {
       <div className="w-full px-6 md:px-12 mx-auto max-w-[1600px]">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 border-b border-gray-100 pb-16">
           <div className="md:col-span-1">
-            <h3 className="text-2xl font-serif text-black mb-6 tracking-widest">V SRDCI VINICE</h3>
+            <h3 className="text-2xl font-serif text-black mb-6 tracking-widest">V SRDCI VINIC</h3>
             <p className="text-gray-500 text-sm leading-7 font-light mb-6">
-              Ubytování v soukromí rodinného domu.<br/>
+              Pronájem domu v soukromí.<br/>
               Mutěnice - Jihomoravský kraj.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-black transition-colors"><Facebook size={20} strokeWidth={1.5} /></a>
-              <a href="#" className="text-gray-400 hover:text-black transition-colors"><Instagram size={20} strokeWidth={1.5} /></a>
+              <a href="https://facebook.com" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-black transition-colors"><Facebook size={20} strokeWidth={1.5} /></a>
+              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-black transition-colors"><Instagram size={20} strokeWidth={1.5} /></a>
             </div>
           </div>
           
@@ -152,9 +165,10 @@ const Footer: React.FC = () => {
           
           <div>
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-8 text-black">Kontakt</h4>
-            <div className="space-y-4">
+            <div className="space-y-4 text-sm font-light text-gray-600">
                <div className="flex flex-col">
-                  <a href="tel:+420123456789" className="text-gray-600 hover:text-black transition text-sm">Rezervace: <br/><span className="text-black">+420 123 456 789</span></a>
+                  <span className="text-gray-400 text-[10px] uppercase tracking-widest mb-1">Rezervace</span>
+                  <a href="tel:+420720114080" className="hover:text-black transition text-sm font-medium text-black">+420 720 114 080</a>
                </div>
             </div>
           </div>
@@ -162,16 +176,18 @@ const Footer: React.FC = () => {
           <div>
              <h4 className="text-xs font-bold uppercase tracking-[0.2em] mb-8 text-black">Email</h4>
              <div className="space-y-3">
-               <a href="mailto:info@vsrdcivinice.cz" className="block text-sm text-gray-500 hover:text-black transition">
-                  info@vsrdcivinice.cz
+               <a href="mailto:info@vsrdcivinic.cz" className="block text-sm text-gray-500 hover:text-black transition">
+                  info@vsrdcivinic.cz
                </a>
              </div>
           </div>
         </div>
         
         <div className="mt-12 flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-400 font-medium uppercase tracking-wider">
-          <p>&copy; 2024 V srdci vinice.</p>
-          <Link to="/admin" className="hover:text-black transition-colors">Administrace</Link>
+          <p>&copy; {new Date().getFullYear()} V srdci vinic.</p>
+          <div className="flex items-center gap-6 mt-4 md:mt-0">
+            <Link to="/admin" className="hover:text-black transition-colors">Administrace</Link>
+          </div>
         </div>
       </div>
     </footer>
@@ -189,6 +205,7 @@ const App: React.FC = () => {
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/akce" element={<EventsPage />} />
             <Route path="/galerie" element={<GalleryPage />} />
             <Route path="/cenik" element={<PricingPage />} />
             <Route path="/tipy" element={<TipsPage />} />
