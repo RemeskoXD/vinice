@@ -13,7 +13,6 @@ import ReservationPage from './pages/Reservation';
 import AdminPage from './pages/Admin';
 
 // --- HELPERS ---
-import Logo from './components/Logo';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -68,7 +67,6 @@ const Navbar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center gap-4 group">
-              <Logo isScrolled={isScrolled} isHome={isHome} className="w-12 h-12 transition-transform duration-500 group-hover:scale-110" />
               <div className="flex flex-col">
                 <span className={`font-serif text-lg md:text-xl tracking-[0.1em] leading-none uppercase transition-colors duration-500 ${logoColor}`}>
                   V SRDCI VINIC

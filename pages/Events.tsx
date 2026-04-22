@@ -4,20 +4,20 @@ import { Calendar, MapPin, ExternalLink } from 'lucide-react';
 
 const events = [
   {
-    title: "Zahájení sezóny 2024",
-    date: "24. dubna 2024",
+    title: "Zahájení sezóny 2026",
+    date: "Duben 2026",
     desc: "Oficiální otevření našeho domu pro letošní sezónu. Přijďte si užít jarní vinice.",
     type: "U nás"
   },
   {
     title: "Mutěnické búdy dokořán",
-    date: "Červen 2024",
+    date: "Červen 2026",
     desc: "Tradiční akce, kdy vinaři v Mutěnicích otevírají své sklepy pro veřejnost. Degustace, hudba a skvělá atmosféra.",
     type: "V obci"
   },
   {
     title: "Vinobraní pod Vyšickem",
-    date: "Září 2024",
+    date: "Září 2026",
     desc: "Oslava sklizně hroznů s bohatým kulturním programem, burčákem a folklorními vystoupeními.",
     type: "Místní akce"
   },
