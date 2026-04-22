@@ -237,9 +237,9 @@ const Home: React.FC = () => {
            
            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
-                { name: "Martina S.", date: "Září 2023", text: "Krásný, čistý dům v klidné části. Velké plus za vinotéku přímo v objektu a možnost degustace, kterou nám majitelé domluvili." },
-                { name: "Jakub H.", date: "Srpen 2023", text: "Ideální pro partu cyklistů. Úschovna kol je bezpečná a posezení u grilu bylo každý večer perfektní. Určitě se vrátíme." },
-                { name: "Lucie K.", date: "Červen 2023", text: "Dům je prostorný a velmi pěkně zařízený. Káva po ránu s výhledem na vinice byl nepopsatelný zážitek." }
+                { name: "Martina S.", date: "Září 2026", text: "Krásný, čistý dům v klidné části. Velké plus za vinotéku přímo v objektu a možnost degustace, kterou nám majitelé domluvili." },
+                { name: "Jakub H.", date: "Srpen 2026", text: "Ideální pro partu cyklistů. Úschovna kol je bezpečná a posezení u grilu bylo každý večer perfektní. Určitě se vrátíme." },
+                { name: "Lucie K.", date: "Červen 2026", text: "Dům je prostorný a velmi pěkně zařízený. Káva po ránu s výhledem na vinice byl nepopsatelný zážitek." }
               ].map((review, idx) => (
                 <Reveal key={idx} delay={idx * 0.1} className="bg-gray-50 p-8 border border-gray-100 relative group hover:bg-white hover:shadow-xl transition-all duration-500">
                    <Quote className="absolute top-6 right-6 text-amber-100 group-hover:text-amber-200 transition-colors" size={40} />
