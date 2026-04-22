@@ -5,7 +5,6 @@ import { Reveal } from '../Reveal';
 import { DayPicker } from 'react-day-picker';
 import { cs } from 'date-fns/locale';
 import { addDays } from 'date-fns';
-import Weather from '../components/Weather';
 
 interface Booking {
   startDate: string;
@@ -62,8 +61,6 @@ const Home: React.FC = () => {
                   Pronájem domu v Mutěnicích.<br/>
                   Užijte si soukromí a klid vinařského kraje.
                 </p>
-                <div className="hidden md:block w-px h-16 bg-white/20"></div>
-                <Weather />
               </div>
               <div className="flex flex-col sm:flex-row gap-6">
                 <Link to="/rezervace" className="group flex items-center px-8 py-4 bg-amber-700 text-white hover:bg-white hover:text-black transition-all duration-500 shadow-lg hover:shadow-xl">
