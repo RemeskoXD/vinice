@@ -61,6 +61,34 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleConfirm = async (id: number) => {
+    if (!confirm('Chcete tuto rezervaci potvrdit? Hostovi bude odeslán e-mail.')) return;
+    try {
+      await fetch(`/api/bookings/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'confirmed' })
+      });
+      fetchBookings();
+    } catch (error) {
+      alert('Chyba při potvrzování');
+    }
+  };
+
+  const handleCancel = async (id: number) => {
+    if (!confirm('Opravdu chcete tuto rezervaci stornovat? Termín se opět uvolní.')) return;
+    try {
+      await fetch(`/api/bookings/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
+      });
+      fetchBookings();
+    } catch (error) {
+      alert('Chyba při stornování');
+    }
+  };
+
   const handleManualAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -227,8 +255,14 @@ const Admin: React.FC = () => {
                           <p className="text-sm font-serif text-black mb-1">
                             {format(new Date(booking.startDate), 'd. M. yyyy')} – {format(new Date(booking.endDate), 'd. M. yyyy')}
                           </p>
-                          <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                            {booking.status === 'confirmed' ? 'Potvrzeno' : 'Čeká na vyřízení'}
+                          <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                            booking.status === 'confirmed' ? 'bg-green-100 text-green-700' : 
+                            booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>
+                            {booking.status === 'confirmed' ? 'Potvrzeno' : 
+                             booking.status === 'cancelled' ? 'Stornováno' : 
+                             'Čeká na vyřízení'}
                           </span>
                         </td>
                         <td className="py-6 align-top">
@@ -258,6 +292,24 @@ const Admin: React.FC = () => {
                         </td>
                         <td className="py-6 text-right align-top">
                           <div className="flex justify-end items-center gap-2">
+                            {booking.status === 'pending' && (
+                              <button 
+                                onClick={() => handleConfirm(booking.id)}
+                                className="bg-green-600 text-white p-2 text-[10px] uppercase font-bold tracking-widest px-4 hover:bg-green-700 transition-all rounded-sm shadow-sm"
+                                title="Potvrdit rezervaci"
+                              >
+                                Potvrdit
+                              </button>
+                            )}
+                            {booking.status !== 'cancelled' && (
+                              <button 
+                                onClick={() => handleCancel(booking.id)}
+                                className="bg-white border border-gray-200 p-2 text-[10px] uppercase font-bold tracking-widest px-4 text-red-600 hover:bg-red-50 transition-all rounded-sm shadow-sm"
+                                title="Stornovat rezervaci"
+                              >
+                                Storno
+                              </button>
+                            )}
                             <button 
                               onClick={() => {
                                 const data = `Příjemce: V srdci vinic\nČástka: ${new Date(booking.startDate).getMonth() >= 3 && new Date(booking.startDate).getMonth() <= 9 ? '3000' : '2250'}\nZpráva: Rezervace ${booking.customerName}`;

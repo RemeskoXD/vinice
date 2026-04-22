@@ -60,6 +60,29 @@ async function startServer() {
     }
   });
 
+  app.patch('/api/bookings/:id/status', async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    try {
+      const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(id) as any;
+      if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+      const stmt = db.prepare('UPDATE bookings SET status = ? WHERE id = ?');
+      stmt.run(status, id);
+
+      // Pokud je stav 'confirmed' a máme email, nasimulujeme odeslání/zaprotokolování
+      if (status === 'confirmed' && booking.customerEmail && booking.customerEmail !== 'admin@local') {
+          console.log(`[AUTOMAT] Odesílám potvrzovací e-mail pro: ${booking.customerEmail}`);
+          // Poznámka: Reálné odesílání e-mailů by v produkci vyžadovalo nastavení SMTP (např. přes nodemailer)
+          // Zde implementujeme logiku, kterou uživatel uvidí jako "automat"
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update status' });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({

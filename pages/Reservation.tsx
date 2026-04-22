@@ -35,6 +35,7 @@ const Reservation: React.FC = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'cash'>('transfer');
   const [submitted, setSubmitted] = useState(false);
   
   const [estimatedPrice, setEstimatedPrice] = useState(0);
@@ -93,7 +94,7 @@ const Reservation: React.FC = () => {
       customerName: name,
       customerEmail: email,
       customerPhone: phone,
-      notes: message,
+      notes: `${message}\n\nZpůsob platby: ${paymentMethod === 'transfer' ? 'Převodem' : 'Hotově'}`,
       status: 'pending' 
     };
 
@@ -249,6 +250,38 @@ const Reservation: React.FC = () => {
                         className="peer w-full bg-transparent border-b border-gray-200 py-3 text-black focus:outline-none focus:border-amber-700 transition-colors resize-none" 
                       />
                       <label className="absolute left-0 top-3 text-xs uppercase tracking-widest text-gray-400 pointer-events-none transition-all peer-focus:-top-4 peer-focus:text-amber-700 peer-[:not(:placeholder-shown)]:-top-4">Poznámka / Dotaz</label>
+                    </div>
+
+                    <div className="space-y-4">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold block mb-4">Způsob platby</label>
+                      <div className="flex flex-col sm:flex-row gap-6">
+                        <label className={`flex items-center gap-3 p-4 border cursor-pointer transition-all flex-1 ${paymentMethod === 'transfer' ? 'border-amber-700 bg-amber-50' : 'border-gray-100 hover:border-gray-300'}`}>
+                          <input 
+                            type="radio" 
+                            name="payment" 
+                            checked={paymentMethod === 'transfer'} 
+                            onChange={() => setPaymentMethod('transfer')}
+                            className="accent-amber-700"
+                          />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold uppercase tracking-widest text-black">Převodem</span>
+                            <span className="text-[10px] text-gray-400">Podklady zašleme do emailu</span>
+                          </div>
+                        </label>
+                        <label className={`flex items-center gap-3 p-4 border cursor-pointer transition-all flex-1 ${paymentMethod === 'cash' ? 'border-amber-700 bg-amber-50' : 'border-gray-100 hover:border-gray-300'}`}>
+                          <input 
+                            type="radio" 
+                            name="payment" 
+                            checked={paymentMethod === 'cash'} 
+                            onChange={() => setPaymentMethod('cash')}
+                            className="accent-amber-700"
+                          />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold uppercase tracking-widest text-black">Hotově</span>
+                            <span className="text-[10px] text-gray-400">Při příjezdu na místě</span>
+                          </div>
+                        </label>
+                      </div>
                     </div>
                   </div>
                   
