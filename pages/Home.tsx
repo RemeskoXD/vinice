@@ -5,6 +5,7 @@ import { Reveal } from '../Reveal';
 import { DayPicker } from 'react-day-picker';
 import { cs } from 'date-fns/locale';
 import { addDays } from 'date-fns';
+import { Helmet } from 'react-helmet-async';
 
 interface Booking {
   startDate: string;
@@ -37,11 +38,15 @@ const Home: React.FC = () => {
 
   return (
     <div className="w-full bg-white">
+      <Helmet>
+        <title>Ubytování V SRDCI VINIC | Mutěnice</title>
+        <meta name="description" content="Kouzelné ubytování V SRDCI VINIC v obci Mutěnice. Moderní srub, venkovní vířivka, vinný sklep, klid a pohoda pro dokonalý odpočinek pro páry i rodiny." />
+      </Helmet>
       {/* Hero Section */}
       <section className="relative h-screen w-full flex items-center text-white overflow-hidden">
         <div className="absolute inset-0 z-0 overflow-hidden">
           <img 
-            src="https://images.unsplash.com/photo-1560493676-04071c5f467b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
+            src="https://web2.itnahodinu.cz/vinice/1/pozadi.webp" 
             alt="Vinice Mutěnice" 
             className="w-full h-full object-cover animate-ken-burns"
           />
@@ -160,7 +165,7 @@ const Home: React.FC = () => {
              <Reveal delay={0.2} className="relative">
                <div className="relative z-10">
                  <img 
-                   src="https://images.unsplash.com/photo-1513694203232-719a280e022f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
+                   src="https://web2.itnahodinu.cz/vinice/1/gauc.webp" 
                    alt="Interiér" 
                    className="rounded-sm shadow-2xl relative z-20"
                  />
@@ -288,7 +293,7 @@ const Home: React.FC = () => {
           <Reveal width="full">
             <div className="h-[60vh] md:h-[80vh] overflow-hidden relative group">
               <img 
-                src="https://images.unsplash.com/photo-1513694203232-719a280e022f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80" 
+                src="https://web2.itnahodinu.cz/vinice/1/kuchin.webp" 
                 alt="Interiér" 
                 className="w-full h-full object-cover transition-transform duration-[2s] ease-out group-hover:scale-110" 
               />
@@ -302,7 +307,7 @@ const Home: React.FC = () => {
           <Reveal width="full" delay={0.1}>
             <div className="h-[60vh] md:h-[80vh] overflow-hidden relative group">
               <img 
-                src="https://images.unsplash.com/photo-1533090161767-e6ffed986c88?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80" 
+                src="https://web2.itnahodinu.cz/vinice/1/dumzahrada.webp" 
                 alt="Exteriér" 
                 className="w-full h-full object-cover transition-transform duration-[2s] ease-out group-hover:scale-110" 
               />

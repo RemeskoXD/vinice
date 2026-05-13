@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DayPicker, DateRange } from 'react-day-picker';
 import { addDays, format, getMonth, differenceInDays } from 'date-fns';
+import { Helmet } from 'react-helmet-async';
 import { cs } from 'date-fns/locale';
 import { Reveal } from '../Reveal';
 import 'react-day-picker/dist/style.css';
@@ -121,6 +122,10 @@ const Reservation: React.FC = () => {
 
   return (
     <div className="bg-white min-h-screen pt-32 pb-24">
+      <Helmet>
+        <title>Rezervace ubytování | Ubytování Mutěnice</title>
+        <meta name="description" content="Rezervujte si svůj pobyt V SRDCI VINIC online. Vyberte si termín ubytování v Mutěnicích a zažijte skvělou dovolenou na jižní Moravě." />
+      </Helmet>
       <div className="max-w-[1200px] mx-auto px-6">
         <Reveal>
           <h1 className="text-4xl md:text-6xl font-light text-black mb-8 font-serif text-center tracking-wider uppercase">Rezervace</h1>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Reveal } from '../Reveal';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -30,6 +31,10 @@ const Pricing: React.FC = () => {
 
   return (
     <div className="bg-white min-h-screen pt-32 pb-24">
+      <Helmet>
+        <title>Ceník | Ubytování Mutěnice</title>
+        <meta name="description" content="Ceník pronájmu ubytování V SRDCI VINIC. Otevřeno máme po celý rok. Přehled cen a často kladených otázek." />
+      </Helmet>
       <div className="max-w-[1200px] mx-auto px-6">
         <Reveal>
           <h1 className="text-4xl md:text-6xl font-light text-black mb-4 font-serif text-center uppercase tracking-wider">Ceník</h1>

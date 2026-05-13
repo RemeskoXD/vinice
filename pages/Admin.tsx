@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { cs } from 'date-fns/locale';
-import { Trash2, Plus, Users, Calendar, TrendingUp, Phone, Mail, MessageSquare } from 'lucide-react';
+import { Trash2, Plus, Users, Calendar, TrendingUp, Phone, Mail, MessageSquare, X, Landmark, Receipt } from 'lucide-react';
 
 interface Booking {
   id: number;
@@ -27,6 +27,8 @@ const Admin: React.FC = () => {
   const [manualName, setManualName] = useState('');
   const [manualPhone, setManualPhone] = useState('');
   const [manualNotes, setManualNotes] = useState('');
+  
+  const [showPaymentFor, setShowPaymentFor] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -311,14 +313,11 @@ const Admin: React.FC = () => {
                               </button>
                             )}
                             <button 
-                              onClick={() => {
-                                const data = `Příjemce: V srdci vinic\nČástka: ${new Date(booking.startDate).getMonth() >= 3 && new Date(booking.startDate).getMonth() <= 9 ? '3000' : '2250'}\nZpráva: Rezervace ${booking.customerName}`;
-                                window.open(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data)}`, '_blank');
-                              }}
+                              onClick={() => setShowPaymentFor(booking)}
                               className="bg-white border border-gray-100 p-2.5 text-gray-400 hover:text-amber-700 hover:border-amber-100 hover:bg-amber-50/50 transition-all rounded-sm shadow-sm"
-                              title="QR Platba (Záloha)"
+                              title="Vygenerovat podklady k platbě"
                             >
-                              <TrendingUp size={16} strokeWidth={1.5} />
+                              <Receipt size={16} strokeWidth={1.5} />
                             </button>
                             <button 
                               onClick={() => handleDelete(booking.id)}
@@ -348,6 +347,80 @@ const Admin: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Payment Details Modal */}
+      {showPaymentFor && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-lg w-full shadow-2xl relative">
+            <button 
+              onClick={() => setShowPaymentFor(null)}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-black transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="p-8 md:p-12">
+              <h3 className="text-2xl font-serif mb-2 text-black">Podklady k platbě</h3>
+              <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-8">
+                Host: <span className="text-black">{showPaymentFor.customerName}</span>
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 items-center bg-gray-50 p-6 border border-gray-100">
+                <div className="flex justify-center bg-white p-4">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`SPD*1.0*ACC:CZ8555000000008029338001*AM:${new Date(showPaymentFor.startDate).getMonth() >= 3 && new Date(showPaymentFor.startDate).getMonth() <= 9 ? '3000.00' : '2250.00'}*CC:CZK*MSG:Zaloha V Srdci Vinic`)}`}
+                    alt="QR kód pro platbu"
+                    className="w-40 h-40 object-contain"
+                  />
+                </div>
+                <div>
+                  <div className="mb-4">
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Částka zálohy</p>
+                    <p className="text-3xl font-serif text-black">{new Date(showPaymentFor.startDate).getMonth() >= 3 && new Date(showPaymentFor.startDate).getMonth() <= 9 ? '3000' : '2250'} Kč</p>
+                  </div>
+                  <div className="space-y-3 font-mono text-xs">
+                    <div>
+                      <span className="text-gray-400 block mb-0.5">Číslo účtu</span>
+                      <span className="text-sm">8029338001/5500</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block mb-0.5">Banka</span>
+                      <span>Raiffeisenbank</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 border-t border-gray-100 pt-8">
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span className="text-gray-400 block mb-1">IBAN</span>
+                    <span className="font-mono">CZ85 5500 0000 0080 2933 8001</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 block mb-1">SWIFT / BIC</span>
+                    <span className="font-mono">RZBC CZ PP</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 bg-amber-50 text-amber-900 border border-amber-200 p-4 rounded-sm flex items-start gap-4">
+                 <Landmark size={20} className="shrink-0 mt-0.5" />
+                 <p className="text-xs leading-relaxed">
+                   <strong>Alternativa (Platba hotově)</strong><br />
+                   Zákazník má možnost uhradit pobyt (případně doplatek kromě zálohy) také hotově přímo na místě při příjezdu a předání klíčů.
+                 </p>
+              </div>
+
+              <button 
+                onClick={() => setShowPaymentFor(null)}
+                className="w-full mt-8 bg-black text-white py-4 text-[10px] uppercase font-bold tracking-widest hover:bg-amber-900 transition-colors"
+               >
+                 Zavřít podklady
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,24 +1,30 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Reveal } from '../Reveal';
 import { X } from 'lucide-react';
 
 const categories = [
   { id: 'all', name: 'Vše' },
   { id: 'ext', name: 'Exteriér' },
-  { id: 'int', name: 'Interiér' },
-  { id: 'wine', name: 'Vinný sklep' }
+  { id: 'int', name: 'Interiér' }
 ];
 
 const imageData = [
-  { src: "https://images.unsplash.com/photo-1560493676-04071c5f467b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80", cat: 'ext' },
-  { src: "https://images.unsplash.com/photo-1513694203232-719a280e022f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80", cat: 'int' },
-  { src: "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80", cat: 'ext' },
-  { src: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80", cat: 'int' },
-  { src: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80", cat: 'wine' },
-  { src: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80", cat: 'int' },
-  { src: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80", cat: 'int' },
-  { src: "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80", cat: 'int' },
-  { src: "https://images.unsplash.com/photo-1600607687644-c7171b42498b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80", cat: 'wine' }
+  { src: "https://web2.itnahodinu.cz/vinice/1/dum.webp", cat: 'ext' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/dumzahrada.webp", cat: 'ext' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/zaharda1.webp", cat: 'ext' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/gauc.webp", cat: 'int' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/gouczjinepozice.webp", cat: 'int' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/videtjgouc.webp", cat: 'int' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/tvstul.webp", cat: 'int' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/kuchin.webp", cat: 'int' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/kuchin1.webp", cat: 'int' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/loznice1.webp", cat: 'int' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/loznice2.webp", cat: 'int' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/loznice22.webp", cat: 'int' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/loznice3.webp", cat: 'int' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/kouplenadole.webp", cat: 'int' },
+  { src: "https://web2.itnahodinu.cz/vinice/1/kouplenanahore.webp", cat: 'int' }
 ];
 
 const Gallery: React.FC = () => {
@@ -31,6 +37,10 @@ const Gallery: React.FC = () => {
 
   return (
     <div className="bg-white min-h-screen pt-32 pb-24">
+      <Helmet>
+        <title>Galerie fotek | Ubytování Mutěnice</title>
+        <meta name="description" content="Prohlédněte si fotografie našeho moderního srubu v Mutěnicích. Fotografie interiéru, exteriéru, koupelen a ložnic." />
+      </Helmet>
       <div className="max-w-[1600px] mx-auto px-6">
         <Reveal>
           <div className="text-center mb-16">

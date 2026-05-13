@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Reveal } from '../Reveal';
 import { MapPin, Info, Wine, Bike, ExternalLink, Navigation, Compass, Car } from 'lucide-react';
 
@@ -117,6 +118,10 @@ const Tips: React.FC = () => {
 
   return (
     <div className="bg-white min-h-screen pt-32 pb-24">
+      <Helmet>
+        <title>Tipy na výlet | Ubytování Mutěnice</title>
+        <meta name="description" content="Tipy na výlety v Mutěnicích a okolí jižní Moravy. Doporučené trasy na kole, pěšky i autem." />
+      </Helmet>
       <div className="max-w-[1400px] mx-auto px-6">
         <Reveal>
           <div className="text-center mb-20">

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { Menu, X, Facebook, Instagram, MapPin, Phone, Mail } from 'lucide-react';
 import { Reveal } from './Reveal';
 
@@ -66,11 +67,14 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/" className="flex-shrink-0 flex items-center gap-4 group">
+            <Link to="/" className="flex-shrink-0 flex items-center group relative z-50">
               <div className="flex flex-col">
-                <span className={`font-serif text-lg md:text-xl tracking-[0.1em] leading-none uppercase transition-colors duration-500 ${logoColor}`}>
-                  V SRDCI VINIC
-                </span>
+                <img 
+                  src="https://web2.itnahodinu.cz/vinice/1/logo.webp" 
+                  alt="V SRDCI VINIC" 
+                  className={`absolute top-[-30px] left-0 h-24 md:h-32 w-auto object-contain transition-all duration-500 drop-shadow-sm ${!isScrolled && isHome ? 'brightness-0 invert' : ''}`}
+                />
+                <div className="h-10 md:h-12 w-24 md:w-32 invisible"></div> {/* Spacer to keep nav layout */}
               </div>
             </Link>
           </div>
@@ -140,7 +144,11 @@ const Footer: React.FC = () => {
       <div className="w-full px-6 md:px-12 mx-auto max-w-[1600px]">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 border-b border-gray-100 pb-16">
           <div className="md:col-span-1">
-            <h3 className="text-2xl font-serif text-black mb-6 tracking-widest">V SRDCI VINIC</h3>
+            <img 
+              src="https://web2.itnahodinu.cz/vinice/1/logo.webp" 
+              alt="V SRDCI VINIC" 
+              className="h-24 md:h-32 w-auto object-contain mb-6 object-left"
+            />
             <p className="text-gray-500 text-sm leading-7 font-light mb-6">
               Pronájem domu v soukromí.<br/>
               Mutěnice - Jihomoravský kraj.
@@ -196,24 +204,26 @@ const Footer: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <HashRouter>
-      <ScrollToTop />
-      <div className="flex flex-col min-h-screen bg-white font-sans">
-        <Navbar />
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/akce" element={<EventsPage />} />
-            <Route path="/galerie" element={<GalleryPage />} />
-            <Route path="/cenik" element={<PricingPage />} />
-            <Route path="/tipy" element={<TipsPage />} />
-            <Route path="/rezervace" element={<ReservationPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </HashRouter>
+    <HelmetProvider>
+      <HashRouter>
+        <ScrollToTop />
+        <div className="flex flex-col min-h-screen bg-white font-sans">
+          <Navbar />
+          <main className="flex-grow">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/akce" element={<EventsPage />} />
+              <Route path="/galerie" element={<GalleryPage />} />
+              <Route path="/cenik" element={<PricingPage />} />
+              <Route path="/tipy" element={<TipsPage />} />
+              <Route path="/rezervace" element={<ReservationPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </HashRouter>
+    </HelmetProvider>
   );
 };
 

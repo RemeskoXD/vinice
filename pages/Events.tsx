@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Reveal } from '../Reveal';
 import { Calendar, MapPin, ExternalLink } from 'lucide-react';
 
@@ -32,6 +33,10 @@ const events = [
 const Events: React.FC = () => {
   return (
     <div className="bg-white min-h-screen pt-32 pb-24">
+      <Helmet>
+        <title>Akce v okolí | Ubytování Mutěnice</title>
+        <meta name="description" content="Poznejte mutěnické vinařské akce. Vinobraní, Mutěnické búdy dokořán a spousta dalšího dění v jihomoravském kraji." />
+      </Helmet>
       <div className="max-w-[1200px] mx-auto px-6">
         <Reveal>
           <h1 className="text-4xl md:text-6xl font-light text-black mb-8 font-serif text-center uppercase tracking-wider">Akce & Události</h1>
