@@ -1,36 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Reveal } from '../Reveal';
 import { Calendar, MapPin, ExternalLink } from 'lucide-react';
 
-const events = [
-  {
-    title: "Zahájení sezóny 2026",
-    date: "Duben 2026",
-    desc: "Oficiální otevření našeho domu pro letošní sezónu. Přijďte si užít jarní vinice.",
-    type: "U nás"
-  },
-  {
-    title: "Mutěnické búdy dokořán",
-    date: "Červen 2026",
-    desc: "Tradiční akce, kdy vinaři v Mutěnicích otevírají své sklepy pro veřejnost. Degustace, hudba a skvělá atmosféra.",
-    type: "V obci"
-  },
-  {
-    title: "Vinobraní pod Vyšickem",
-    date: "Září 2026",
-    desc: "Oslava sklizně hroznů s bohatým kulturním programem, burčákem a folklorními vystoupeními.",
-    type: "Místní akce"
-  },
-  {
-    title: "Degustace u místního vinaře",
-    date: "Celoročně / na domluvu",
-    desc: "Můžeme pro vás domluvit soukromou degustaci v nedalekém sklípku. Poznejte pravou chuť Mutěnic.",
-    type: "Zážitek"
-  }
-];
+interface EventItem {
+  id: number;
+  title: string;
+  date: string;
+  desc: string;
+  type: string;
+}
 
 const Events: React.FC = () => {
+  const [events, setEvents] = useState<EventItem[]>([]);
+
+  useEffect(() => {
+    fetch('/api/events')
+      .then(res => res.json())
+      .then(data => setEvents(data))
+      .catch(err => console.error(err));
+  }, []);
+
   return (
     <div className="bg-white min-h-screen pt-32 pb-24">
       <Helmet>

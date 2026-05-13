@@ -36,6 +36,7 @@ const Reservation: React.FC = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
+  const [guests, setGuests] = useState(2);
   const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'cash'>('transfer');
   const [submitted, setSubmitted] = useState(false);
   
@@ -95,7 +96,9 @@ const Reservation: React.FC = () => {
       customerName: name,
       customerEmail: email,
       customerPhone: phone,
-      notes: `${message}\n\nZpůsob platby: ${paymentMethod === 'transfer' ? 'Převodem' : 'Hotově'}`,
+      guests: guests,
+      paymentMethod: paymentMethod === 'transfer' ? 'převodem' : 'hotově',
+      notes: `${message}\n\nPočet hostů: ${guests}\nDoplatek: ${paymentMethod === 'transfer' ? 'Převodem' : 'Hotově'}`,
       status: 'pending' 
     };
 
@@ -193,10 +196,23 @@ const Reservation: React.FC = () => {
                 <div className="w-16 h-16 bg-amber-700 rounded-full flex items-center justify-center text-white mb-6 animate-bounce">
                   <span className="text-2xl">✓</span>
                 </div>
-                <h3 className="text-2xl font-serif text-black mb-4 uppercase tracking-wider">Poptávka odeslána</h3>
+                <h3 className="text-2xl font-serif text-black mb-4 uppercase tracking-wider">Rezervace odeslána</h3>
                 <p className="text-gray-600 font-light mb-8 max-w-sm leading-relaxed">
-                  Děkujeme! Vaši poptávku jsme přijali. Brzy se vám ozveme na email s potvrzením a informacemi k platbě zálohy.
+                  Děkujeme! Vaši poptávku jsme přijali. Pro závazné potvrzení prosím uhraďte zálohu (50 %). Zbylá část bude doplacena při příjezdu dle Vaší volby.
                 </p>
+                
+                <div className="bg-white p-6 rounded-md shadow-sm mb-8 mx-auto inline-block border border-gray-100">
+                  <p className="font-bold text-xs uppercase tracking-widest text-amber-700 mb-4">Platba zálohy přes QR kód</p>
+                  <img 
+                    src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=MOCK_PLATBA" 
+                    alt="QR kód pro platbu zálohy" 
+                    className="mx-auto w-32 h-32 opacity-80"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-4 leading-relaxed max-w-[200px] mx-auto text-center">
+                    Zaslali jsme Vám také email s potvrzením a platebními údaji.
+                  </p>
+                </div>
+
                 <button 
                   onClick={() => setSubmitted(false)}
                   className="text-[10px] font-bold uppercase tracking-[0.3em] bg-black text-white px-8 py-3 hover:bg-amber-800 transition-colors"
@@ -247,6 +263,20 @@ const Reservation: React.FC = () => {
                     </div>
 
                     <div className="relative group">
+                        <input 
+                        type="number" 
+                        required
+                        min="1"
+                        max="8"
+                        value={guests}
+                        onChange={e => setGuests(parseInt(e.target.value))}
+                        placeholder="&nbsp;"
+                        className="peer w-full bg-transparent border-b border-gray-200 py-3 text-black focus:outline-none focus:border-amber-700 transition-colors" 
+                        />
+                        <label className="absolute left-0 top-3 text-xs uppercase tracking-widest text-gray-400 pointer-events-none transition-all peer-focus:-top-4 peer-focus:text-amber-700 peer-[:not(:placeholder-shown)]:-top-4">Počet hostů</label>
+                    </div>
+
+                    <div className="relative group">
                       <textarea 
                         rows={3} 
                         value={message}
@@ -258,7 +288,10 @@ const Reservation: React.FC = () => {
                     </div>
 
                     <div className="space-y-4">
-                      <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold block mb-4">Způsob platby</label>
+                      <p className="text-sm font-light text-gray-600 mb-6 bg-gray-50 border border-gray-100 p-4 leading-relaxed">
+                        <strong className="text-black font-medium">Záloha 50 % z ceny pobytu </strong>se hradí předem prostřednictvím QR kódu nebo převodem (podklady obdržíte emailem po odeslání rezervace). Níže si prosím vyberte, jakou formou preferujete doplácet zbylých 50 % při příjezdu.
+                      </p>
+                      <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold block mb-4">Doplatek (50%) při příjezdu</label>
                       <div className="flex flex-col sm:flex-row gap-6">
                         <label className={`flex items-center gap-3 p-4 border cursor-pointer transition-all flex-1 ${paymentMethod === 'transfer' ? 'border-amber-700 bg-amber-50' : 'border-gray-100 hover:border-gray-300'}`}>
                           <input 
@@ -269,8 +302,8 @@ const Reservation: React.FC = () => {
                             className="accent-amber-700"
                           />
                           <div className="flex flex-col">
-                            <span className="text-xs font-bold uppercase tracking-widest text-black">Převodem</span>
-                            <span className="text-[10px] text-gray-400">Podklady zašleme do emailu</span>
+                            <span className="text-xs font-bold uppercase tracking-widest text-black">Převodem před příjezdem</span>
+                            <span className="text-[10px] text-gray-400">Zašleme Vám výzvu na doplatek</span>
                           </div>
                         </label>
                         <label className={`flex items-center gap-3 p-4 border cursor-pointer transition-all flex-1 ${paymentMethod === 'cash' ? 'border-amber-700 bg-amber-50' : 'border-gray-100 hover:border-gray-300'}`}>
@@ -282,8 +315,8 @@ const Reservation: React.FC = () => {
                             className="accent-amber-700"
                           />
                           <div className="flex flex-col">
-                            <span className="text-xs font-bold uppercase tracking-widest text-black">Hotově</span>
-                            <span className="text-[10px] text-gray-400">Při příjezdu na místě</span>
+                            <span className="text-xs font-bold uppercase tracking-widest text-black">Hotově na místě</span>
+                            <span className="text-[10px] text-gray-400">Při předání klíčů</span>
                           </div>
                         </label>
                       </div>
@@ -292,14 +325,26 @@ const Reservation: React.FC = () => {
                   
                   <div className="pt-6">
                       {range?.from && range?.to && nights >= 2 && (
-                          <div className="mb-10 p-6 bg-amber-50 border border-amber-100 flex flex-col md:flex-row justify-between items-center gap-6 shadow-sm">
+                          <div className="mb-10 p-6 bg-amber-50 border border-amber-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm">
                             <div>
                               <p className="text-[10px] uppercase tracking-widest text-amber-800 font-bold mb-1">Vybraný termín ({nights} noci)</p>
                               <p className="text-black font-serif text-lg">{format(range.from, 'd. MMMM', { locale: cs })} – {format(range.to, 'd. MMMM yyyy', { locale: cs })}</p>
                             </div>
-                            <div className="text-center md:text-right">
-                              <p className="text-[10px] uppercase tracking-widest text-amber-800 font-bold mb-1">Odhadovaná cena</p>
-                              <p className="text-3xl font-serif text-amber-900">{estimatedPrice.toLocaleString('cs-CZ')} Kč</p>
+                            <div className="w-full md:w-auto text-left md:text-right border-t md:border-t-0 border-amber-200/50 pt-4 md:pt-0">
+                                <div className="space-y-2">
+                                  <div className="flex justify-between md:justify-end gap-8">
+                                    <span className="text-[10px] uppercase tracking-widest text-amber-800 font-bold">Celková cena:</span>
+                                    <span className="font-serif text-amber-900">{estimatedPrice.toLocaleString('cs-CZ')} Kč</span>
+                                  </div>
+                                  <div className="flex justify-between md:justify-end gap-8">
+                                    <span className="text-[10px] uppercase tracking-widest text-amber-800 font-bold">Záloha (50 % předem):</span>
+                                    <span className="font-serif text-amber-900 font-bold">{(estimatedPrice / 2).toLocaleString('cs-CZ')} Kč</span>
+                                  </div>
+                                  <div className="flex justify-between md:justify-end gap-8">
+                                    <span className="text-[10px] uppercase tracking-widest text-amber-800 font-bold">Doplatek ({paymentMethod === 'cash' ? 'hotově' : 'převodem'}):</span>
+                                    <span className="font-serif text-amber-900">{(estimatedPrice / 2).toLocaleString('cs-CZ')} Kč</span>
+                                  </div>
+                                </div>
                             </div>
                           </div>
                       )}

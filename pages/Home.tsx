@@ -346,7 +346,7 @@ const Home: React.FC = () => {
            </Reveal>
            <div className="w-full h-[500px] bg-gray-100 relative shadow-2xl border border-gray-100">
             <iframe 
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2617.962071960252!2d17.026416615865243!3d48.90562400539304!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x471329369ec9057b%3A0xc3d8a68ba7a59af!2zVmluYcWZw2vDoSAxMjY0LCA2OTYgMTEgTXV0xJtuaWNl!5e0!3m2!1scs!2scz!4v1700000000000!5m2!1scs!2scz&z=17" 
+              src="https://maps.google.com/maps?q=Vina%C5%99sk%C3%A1%201264,%20696%2011%20Mut%C4%9Bnice&t=&z=19&ie=UTF8&iwloc=&output=embed" 
               width="100%" 
               height="100%" 
               style={{ border: 0 }} 

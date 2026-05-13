@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { cs } from 'date-fns/locale';
-import { Trash2, Plus, Users, Calendar, TrendingUp, Phone, Mail, MessageSquare, X, Landmark, Receipt } from 'lucide-react';
+import { Trash2, Plus, Users, Calendar, TrendingUp, Phone, Mail, MessageSquare, X, Landmark, Receipt, Edit2 } from 'lucide-react';
 
 interface Booking {
   id: number;
@@ -11,7 +11,17 @@ interface Booking {
   customerEmail: string;
   customerPhone?: string;
   notes?: string;
+  guests?: number;
+  paymentMethod?: string;
   status: string;
+}
+
+interface EventItem {
+  id: number;
+  title: string;
+  date: string;
+  desc: string;
+  type: string;
 }
 
 const ADMIN_PASSWORD = 'vinice123'; // V produkci doporučujeme přesunout do .env jako VITE_ADMIN_PASSWORD
@@ -20,6 +30,8 @@ const Admin: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [activeTab, setActiveTab] = useState<'bookings' | 'events'>('bookings');
   
   // Manual booking form
   const [manualStart, setManualStart] = useState('');
@@ -28,11 +40,19 @@ const Admin: React.FC = () => {
   const [manualPhone, setManualPhone] = useState('');
   const [manualNotes, setManualNotes] = useState('');
   
+  // Event form
+  const [eventTitle, setEventTitle] = useState('');
+  const [eventDate, setEventDate] = useState('');
+  const [eventDesc, setEventDesc] = useState('');
+  const [eventType, setEventType] = useState('U nás');
+  const [editingEventId, setEditingEventId] = useState<number | null>(null);
+
   const [showPaymentFor, setShowPaymentFor] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchBookings();
+      fetchEvents();
     }
   }, [isAuthenticated]);
 
@@ -40,6 +60,13 @@ const Admin: React.FC = () => {
     fetch('/api/bookings')
       .then(res => res.json())
       .then(data => setBookings(data))
+      .catch(err => console.error(err));
+  };
+
+  const fetchEvents = () => {
+    fetch('/api/events')
+      .then(res => res.json())
+      .then(data => setEvents(data))
       .catch(err => console.error(err));
   };
 
@@ -91,6 +118,24 @@ const Admin: React.FC = () => {
     }
   };
 
+  const [sendingThanks, setSendingThanks] = useState<number | null>(null);
+  const handleSendThanks = async (id: number) => {
+    if (!confirm('Odeslat poděkování hostovi na e-mail?')) return;
+    setSendingThanks(id);
+    try {
+      const res = await fetch(`/api/bookings/${id}/send-thanks`, { method: 'POST' });
+      if (res.ok) {
+        alert('Poděkování bylo úspěšně odesláno.');
+      } else {
+        alert('E-mail se nepodařilo odeslat. Možná není k dispozici adresa zadána zákazníkem.');
+      }
+    } catch (error) {
+      alert('Chyba při odesílání e-mailu.');
+    } finally {
+      setSendingThanks(null);
+    }
+  };
+
   const handleManualAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -116,6 +161,63 @@ const Admin: React.FC = () => {
     } catch (error) {
       alert('Chyba při přidávání');
     }
+  };
+
+  const handleEventSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      title: eventTitle,
+      date: eventDate,
+      desc: eventDesc,
+      type: eventType,
+    };
+    
+    try {
+      if (editingEventId) {
+        await fetch(`/api/events/${editingEventId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        await fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+      fetchEvents();
+      handleEventCancel();
+    } catch (error) {
+      alert('Chyba při ukládání akce');
+    }
+  };
+
+  const handleEventDelete = async (id: number) => {
+    if (!confirm('Opravdu smazat tuto akci?')) return;
+    try {
+      await fetch(`/api/events/${id}`, { method: 'DELETE' });
+      fetchEvents();
+    } catch (error) {
+      alert('Chyba při mazání');
+    }
+  };
+
+  const handleEventEdit = (evt: EventItem) => {
+    setEditingEventId(evt.id);
+    setEventTitle(evt.title);
+    setEventDate(evt.date);
+    setEventDesc(evt.desc);
+    setEventType(evt.type);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleEventCancel = () => {
+    setEditingEventId(null);
+    setEventTitle('');
+    setEventDate('');
+    setEventDesc('');
+    setEventType('U nás');
   };
 
   if (!isAuthenticated) {
@@ -155,7 +257,7 @@ const Admin: React.FC = () => {
       <div className="max-w-[1920px] mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
             <div>
-                <h1 className="text-3xl md:text-4xl font-serif uppercase tracking-wider">Správa rezervací</h1>
+                <h1 className="text-3xl md:text-4xl font-serif uppercase tracking-wider">Administrace</h1>
                 <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mt-2">V srdci vinic – Dashboard</p>
             </div>
             <button 
@@ -166,7 +268,25 @@ const Admin: React.FC = () => {
             </button>
         </div>
 
-        {/* Stats Row */}
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 mb-12">
+          <button 
+            onClick={() => setActiveTab('bookings')} 
+            className={`px-8 py-4 font-bold text-xs uppercase tracking-widest transition-colors ${activeTab === 'bookings' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
+          >
+            Rezervace
+          </button>
+          <button 
+            onClick={() => setActiveTab('events')} 
+            className={`px-8 py-4 font-bold text-xs uppercase tracking-widest transition-colors ${activeTab === 'events' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
+          >
+            Akce
+          </button>
+        </div>
+
+        {activeTab === 'bookings' ? (
+          <>
+            {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           <div className="bg-white p-8 shadow-sm flex items-center gap-6 border-l-8 border-amber-900 rounded-sm">
             <div className="p-4 bg-amber-50 rounded-sm text-amber-900">
@@ -270,6 +390,11 @@ const Admin: React.FC = () => {
                         <td className="py-6 align-top">
                           <p className="text-sm font-bold text-black mb-2">{booking.customerName}</p>
                           <div className="space-y-1">
+                             <div className="flex items-center gap-2 text-xs text-amber-700 font-medium mb-2">
+                               <Users size={12} /> {booking.guests || 2} osob
+                               <span className="text-gray-300">|</span> 
+                               <Landmark size={12} /> {booking.paymentMethod || 'hotově'}
+                             </div>
                              {booking.customerEmail && (
                                <a href={`mailto:${booking.customerEmail}`} className="flex items-center gap-2 text-xs text-gray-400 hover:text-amber-700 transition-colors">
                                  <Mail size={12} /> {booking.customerEmail}
@@ -320,6 +445,14 @@ const Admin: React.FC = () => {
                               <Receipt size={16} strokeWidth={1.5} />
                             </button>
                             <button 
+                              onClick={() => handleSendThanks(booking.id)}
+                              disabled={sendingThanks === booking.id}
+                              className={`bg-white border border-gray-100 p-2.5 transition-all rounded-sm shadow-sm ${sendingThanks === booking.id ? 'text-gray-300' : 'text-gray-400 hover:text-amber-700 hover:border-amber-100 hover:bg-amber-50/50'}`}
+                              title="Odeslat e-mail 'Děkujeme za návštěvu'"
+                            >
+                              <Mail size={16} strokeWidth={1.5} />
+                            </button>
+                            <button 
                               onClick={() => handleDelete(booking.id)}
                               className="bg-white border border-gray-100 p-2.5 text-gray-300 hover:text-red-700 hover:border-red-100 hover:bg-red-50/50 transition-all rounded-sm shadow-sm"
                               title="Odstranit záznam"
@@ -346,6 +479,112 @@ const Admin: React.FC = () => {
             </div>
           </div>
         </div>
+          </>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
+            {/* Add/Edit Event */}
+            <div className="xl:col-span-1">
+              <div className="bg-white p-8 shadow-sm sticky top-32">
+                <h2 className="text-lg font-serif mb-8 flex items-center gap-3 uppercase tracking-wider">
+                  <Plus size={20} className="text-amber-700" /> {editingEventId ? 'Upravit Akci' : 'Nová Akce'}
+                </h2>
+                <form onSubmit={handleEventSave} className="space-y-6">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Název akce</label>
+                    <input type="text" required value={eventTitle} onChange={e => setEventTitle(e.target.value)} className="w-full border-b border-gray-100 p-2 focus:outline-none focus:border-amber-700" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Termín</label>
+                    <input type="text" required placeholder="Např. Duben 2026" value={eventDate} onChange={e => setEventDate(e.target.value)} className="w-full border-b border-gray-100 p-2 focus:outline-none focus:border-amber-700" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Typ / Místo</label>
+                    <input type="text" required placeholder="Např. U nás, V obci, Místní akce" value={eventType} onChange={e => setEventType(e.target.value)} className="w-full border-b border-gray-100 p-2 focus:outline-none focus:border-amber-700" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Popis</label>
+                    <textarea rows={4} required value={eventDesc} onChange={e => setEventDesc(e.target.value)} className="w-full border-b border-gray-100 p-2 focus:outline-none focus:border-amber-700 resize-none font-light text-sm" />
+                  </div>
+                  <div className="flex gap-4 pt-4">
+                    <button type="submit" className="flex-1 bg-black text-white py-4 uppercase font-bold text-[10px] tracking-widest hover:bg-amber-900 transition-colors shadow-md">
+                      {editingEventId ? 'Uložit' : 'Přidat'}
+                    </button>
+                    {editingEventId && (
+                      <button type="button" onClick={handleEventCancel} className="bg-gray-100 text-gray-600 px-6 py-4 uppercase font-bold text-[10px] tracking-widest hover:bg-gray-200 transition-colors shadow-md">
+                        Zrušit
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            {/* List Events */}
+            <div className="xl:col-span-3">
+              <div className="bg-white p-8 md:p-12 shadow-sm min-h-[600px]">
+                <div className="flex justify-between items-center mb-10">
+                  <h2 className="text-xl font-serif uppercase tracking-wider">Seznam vytvořených akcí</h2>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-[10px] uppercase tracking-widest font-bold text-gray-400">
+                        <th className="pb-6 w-48">Akce a Termín</th>
+                        <th className="pb-6">Popis</th>
+                        <th className="pb-6 text-right">Správa</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {events.map((evt) => (
+                        <tr key={evt.id} className="group hover:bg-amber-50/30 transition-colors">
+                          <td className="py-6 align-top">
+                            <p className="text-sm font-bold text-black mb-1">{evt.title}</p>
+                            <p className="text-xs text-gray-500">{evt.date}</p>
+                            <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 mt-2 inline-block">
+                              {evt.type}
+                            </span>
+                          </td>
+                          <td className="py-6 align-top max-w-md">
+                             <p className="text-sm font-light text-gray-600 leading-relaxed">{evt.desc}</p>
+                          </td>
+                          <td className="py-6 text-right align-top">
+                            <div className="flex justify-end items-center gap-2">
+                              <button 
+                                onClick={() => handleEventEdit(evt)}
+                                className="bg-white border border-gray-100 p-2.5 text-gray-400 hover:text-amber-700 hover:border-amber-100 hover:bg-amber-50/50 transition-all rounded-sm shadow-sm"
+                                title="Upravit"
+                              >
+                                <Edit2 size={16} strokeWidth={1.5} />
+                              </button>
+                              <button 
+                                onClick={() => handleEventDelete(evt.id)}
+                                className="bg-white border border-gray-100 p-2.5 text-gray-300 hover:text-red-700 hover:border-red-100 hover:bg-red-50/50 transition-all rounded-sm shadow-sm"
+                                title="Odstranit"
+                              >
+                                <Trash2 size={16} strokeWidth={1.5} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {events.length === 0 && (
+                        <tr>
+                          <td colSpan={3} className="py-16 text-center text-gray-300">
+                            <div className="flex flex-col items-center gap-4">
+                              <Calendar size={48} strokeWidth={1} className="opacity-20" />
+                              <p className="text-xs uppercase tracking-[0.2em] font-bold">Zatím žádné akce</p>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Payment Details Modal */}

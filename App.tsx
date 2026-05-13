@@ -72,7 +72,7 @@ const Navbar: React.FC = () => {
                 <img 
                   src="https://web2.itnahodinu.cz/vinice/1/logo.webp" 
                   alt="V SRDCI VINIC" 
-                  className={`absolute top-[-30px] left-0 h-24 md:h-32 w-auto object-contain transition-all duration-500 drop-shadow-sm ${!isScrolled && isHome ? 'brightness-0 invert' : ''}`}
+                  className={`absolute top-[-30px] left-0 h-24 md:h-32 w-auto object-contain transition-all duration-500 drop-shadow-sm`}
                 />
                 <div className="h-10 md:h-12 w-24 md:w-32 invisible"></div> {/* Spacer to keep nav layout */}
               </div>
@@ -85,7 +85,7 @@ const Navbar: React.FC = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`text-[11px] font-bold uppercase tracking-[0.15em] transition-all duration-300 relative group py-2 ${
+                className={`text-[14px] font-bold uppercase tracking-[0.1em] transition-all duration-300 relative group py-2 ${
                   isActive(link.path) 
                     ? 'text-amber-700' 
                     : (isScrolled || !isHome ? 'text-gray-600 hover:text-black' : 'text-gray-100 hover:text-white hover:scale-105')
