@@ -36,7 +36,8 @@ db.exec(`
     title TEXT NOT NULL,
     date TEXT NOT NULL,
     desc TEXT,
-    type TEXT
+    type TEXT,
+    link TEXT
   );
 `);
 
@@ -219,7 +220,7 @@ async function startServer() {
   // Events API
   app.get('/api/events', (req, res) => {
     try {
-      const events = db.prepare('SELECT * FROM events ORDER BY id DESC').all();
+      const events = db.prepare('SELECT * FROM events ORDER BY id ASC').all();
       res.json(events);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch events' });
@@ -227,10 +228,10 @@ async function startServer() {
   });
 
   app.post('/api/events', (req, res) => {
-    const { title, date, desc, type } = req.body;
+    const { title, date, startDate, endDate, desc, type, link } = req.body;
     try {
-      const stmt = db.prepare('INSERT INTO events (title, date, desc, type) VALUES (?, ?, ?, ?)');
-      const info = stmt.run(title, date, desc || '', type || '');
+      const stmt = db.prepare('INSERT INTO events (title, date, startDate, endDate, desc, type, link) VALUES (?, ?, ?, ?, ?, ?, ?)');
+      const info = stmt.run(title, date, startDate || null, endDate || null, desc || '', type || '', link || '');
       res.json({ id: info.lastInsertRowid, success: true });
     } catch (error) {
       res.status(500).json({ error: 'Failed to create event' });
@@ -239,10 +240,10 @@ async function startServer() {
 
   app.put('/api/events/:id', (req, res) => {
     const { id } = req.params;
-    const { title, date, desc, type } = req.body;
+    const { title, date, startDate, endDate, desc, type, link } = req.body;
     try {
-      const stmt = db.prepare('UPDATE events SET title = ?, date = ?, desc = ?, type = ? WHERE id = ?');
-      stmt.run(title, date, desc || '', type || '', id);
+      const stmt = db.prepare('UPDATE events SET title = ?, date = ?, startDate = ?, endDate = ?, desc = ?, type = ?, link = ? WHERE id = ?');
+      stmt.run(title, date, startDate || null, endDate || null, desc || '', type || '', link || '', id);
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: 'Failed to update event' });

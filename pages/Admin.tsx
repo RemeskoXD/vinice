@@ -20,8 +20,11 @@ interface EventItem {
   id: number;
   title: string;
   date: string;
+  startDate?: string;
+  endDate?: string;
   desc: string;
   type: string;
+  link?: string;
 }
 
 const ADMIN_PASSWORD = 'vinice123'; // V produkci doporučujeme přesunout do .env jako VITE_ADMIN_PASSWORD
@@ -43,8 +46,11 @@ const Admin: React.FC = () => {
   // Event form
   const [eventTitle, setEventTitle] = useState('');
   const [eventDate, setEventDate] = useState('');
+  const [eventStartDate, setEventStartDate] = useState('');
+  const [eventEndDate, setEventEndDate] = useState('');
   const [eventDesc, setEventDesc] = useState('');
   const [eventType, setEventType] = useState('U nás');
+  const [eventLink, setEventLink] = useState('');
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
 
   const [showPaymentFor, setShowPaymentFor] = useState<Booking | null>(null);
@@ -168,8 +174,11 @@ const Admin: React.FC = () => {
     const payload = {
       title: eventTitle,
       date: eventDate,
+      startDate: eventStartDate,
+      endDate: eventEndDate,
       desc: eventDesc,
       type: eventType,
+      link: eventLink
     };
     
     try {
@@ -207,8 +216,11 @@ const Admin: React.FC = () => {
     setEditingEventId(evt.id);
     setEventTitle(evt.title);
     setEventDate(evt.date);
+    setEventStartDate(evt.startDate || '');
+    setEventEndDate(evt.endDate || '');
     setEventDesc(evt.desc);
     setEventType(evt.type);
+    setEventLink(evt.link || '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -216,8 +228,11 @@ const Admin: React.FC = () => {
     setEditingEventId(null);
     setEventTitle('');
     setEventDate('');
+    setEventStartDate('');
+    setEventEndDate('');
     setEventDesc('');
     setEventType('U nás');
+    setEventLink('');
   };
 
   if (!isAuthenticated) {
@@ -496,6 +511,20 @@ const Admin: React.FC = () => {
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Termín</label>
                     <input type="text" required placeholder="Např. Duben 2026" value={eventDate} onChange={e => setEventDate(e.target.value)} className="w-full border-b border-gray-100 p-2 focus:outline-none focus:border-amber-700" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Počátek (pro automatické skrývání)</label>
+                      <input type="date" value={eventStartDate} onChange={e => setEventStartDate(e.target.value)} className="w-full border-b border-gray-100 p-2 focus:outline-none focus:border-amber-700 text-xs text-gray-500" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Konec</label>
+                      <input type="date" value={eventEndDate} onChange={e => setEventEndDate(e.target.value)} className="w-full border-b border-gray-100 p-2 focus:outline-none focus:border-amber-700 text-xs text-gray-500" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Odkaz (volitelný)</label>
+                    <input type="url" placeholder="https://" value={eventLink} onChange={e => setEventLink(e.target.value)} className="w-full border-b border-gray-100 p-2 focus:outline-none focus:border-amber-700" />
                   </div>
                   <div>
                     <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Typ / Místo</label>
