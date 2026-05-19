@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { cs } from 'date-fns/locale';
-import { Trash2, Plus, Users, Calendar, TrendingUp, Phone, Mail, MessageSquare, X, Landmark, Receipt, Edit2, Eye, CheckCircle, CheckSquare } from 'lucide-react';
+import { Trash2, Plus, Users, Calendar, TrendingUp, Phone, Mail, MessageSquare, X, Landmark, Receipt, Edit2, Eye, CheckCircle, CheckSquare, Database, Upload } from 'lucide-react';
 
 interface Booking {
   id: number;
@@ -105,6 +105,57 @@ const Admin: React.FC = () => {
       .then(res => res.json())
       .then(data => setPromos(data))
       .catch(err => console.error(err));
+  };
+
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  const handleRestoreDB = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!confirm('Opravdu chcete obnovit databázi ze zvoleného souboru? Všechna aktuální data budou nevratně přepsána.')) {
+      e.target.value = '';
+      return;
+    }
+
+    setIsRestoring(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('dbFile', file);
+      formData.append('heslo', ADMIN_PASSWORD);
+
+      const res = await fetch('/api/admin/restore-db', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setAlertDialog({
+          title: 'Úspěch',
+          message: 'Databáze byla úspěšně obnovena ze zálohy.'
+        });
+        
+        fetchBookings();
+        fetchEvents();
+        fetchPromos();
+      } else {
+        setAlertDialog({
+          title: 'Chyba při obnově',
+          message: data.error || 'Nahrání se nezdařilo.'
+        });
+      }
+    } catch (err) {
+      setAlertDialog({
+        title: 'Chyba',
+        message: 'Došlo k chybě při komunikaci se serverem.'
+      });
+    } finally {
+      setIsRestoring(false);
+      e.target.value = '';
+    }
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -462,12 +513,40 @@ const Admin: React.FC = () => {
                 <h1 className="text-3xl md:text-4xl font-serif uppercase tracking-wider">Administrace</h1>
                 <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mt-2">V srdci vinic – Dashboard</p>
             </div>
-            <button 
-              onClick={() => setIsAuthenticated(false)} 
-              className="text-[10px] font-bold uppercase tracking-widest bg-white border border-gray-200 px-6 py-2 hover:bg-red-50 hover:text-red-600 transition-all shadow-sm"
-            >
-              Odhlásit se
-            </button>
+            <div className="flex flex-wrap gap-3">
+                <a 
+                  href={`/zaloha?heslo=${ADMIN_PASSWORD}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] font-bold uppercase tracking-widest bg-amber-50 border border-amber-200 text-amber-900 px-6 py-2 hover:bg-amber-100 transition-all shadow-sm flex items-center gap-2"
+                  title="Stáhnout SQLite databázi jako .db soubor"
+                >
+                  <Database size={14} />
+                  Záloha DB
+                </a>
+                
+                <label 
+                  className={`text-[10px] font-bold uppercase tracking-widest bg-emerald-50 border border-emerald-200 text-emerald-900 px-6 py-2 hover:bg-emerald-100 transition-all shadow-sm flex items-center gap-2 cursor-pointer ${isRestoring ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title="Nahrát záložní SQLite databázi (.db soubor)"
+                >
+                  <Upload size={14} />
+                  {isRestoring ? 'Obnovuji...' : 'Obnovit ze zálohy'}
+                  <input 
+                    type="file" 
+                    accept=".db" 
+                    onChange={handleRestoreDB} 
+                    disabled={isRestoring}
+                    className="hidden" 
+                  />
+                </label>
+
+                <button 
+                  onClick={() => setIsAuthenticated(false)} 
+                  className="text-[10px] font-bold uppercase tracking-widest bg-white border border-gray-200 px-6 py-2 hover:bg-red-50 hover:text-red-600 transition-all shadow-sm"
+                >
+                  Odhlásit se
+                </button>
+            </div>
         </div>
 
         {/* Tabs */}

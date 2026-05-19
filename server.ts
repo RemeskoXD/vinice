@@ -4,6 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import nodemailer from 'nodemailer';
+import multer from 'multer';
 
 let transporter: nodemailer.Transporter;
 
@@ -39,7 +40,7 @@ const dbDir = path.dirname(dbPath);
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
-const db = new Database(dbPath);
+let db = new Database(dbPath);
 console.log(`Přiřazena databáze na cestě: ${dbPath}`);
 
 db.exec(`
@@ -208,6 +209,104 @@ async function startServer() {
   app.use(express.json());
 
   // API Routes
+  const upload = multer({ storage: multer.memoryStorage() });
+
+  app.post('/api/admin/restore-db', upload.single('dbFile'), (req, res) => {
+    const password = req.body.heslo || req.body.password;
+    const adminPassword = process.env.ADMIN_PASSWORD || 'vinice123';
+
+    if (!password || password !== adminPassword) {
+      return res.status(403).json({ error: 'Nepovolený přístup. Špatné heslo.' });
+    }
+
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ error: 'Nebyl nahrán žádný soubor.' });
+    }
+
+    const tempBackupPath = `${dbPath}.bak`;
+    let oldDbClosed = false;
+
+    try {
+      // 1. Close current DB connection
+      db.close();
+      oldDbClosed = true;
+
+      // 2. Create temporary backup of current db file if it exists
+      if (fs.existsSync(dbPath)) {
+        fs.copyFileSync(dbPath, tempBackupPath);
+      }
+
+      // 3. Overwrite the DB file with the uploaded database buffer
+      fs.writeFileSync(dbPath, req.file.buffer);
+
+      // 4. Try to re-open DB connection
+      db = new Database(dbPath);
+      
+      // Let's test if the DB is actually readable by running a simple query
+      db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+
+      // Clean up temporary backup since new DB is successfully open and verified
+      if (fs.existsSync(tempBackupPath)) {
+        fs.unlinkSync(tempBackupPath);
+      }
+
+      console.log('Databáze byla úspěšně obnovena ze zálohy.');
+      return res.json({ success: true, message: 'Databáze byla úspěšně obnovena.' });
+
+    } catch (error: any) {
+      console.error('Chyba při obnovování databáze:', error);
+
+      // Try to recover from the backup
+      try {
+        if (oldDbClosed) {
+          try {
+            db.close();
+          } catch {}
+        }
+        
+        if (fs.existsSync(tempBackupPath)) {
+          fs.copyFileSync(tempBackupPath, dbPath);
+          db = new Database(dbPath);
+          fs.unlinkSync(tempBackupPath);
+        } else {
+          // If no backup existed, just re-open whatever we had or make empty one
+          db = new Database(dbPath);
+        }
+      } catch (recoveryErr) {
+        console.error('Kritická chyba při obnově původní databáze:', recoveryErr);
+      }
+
+      return res.status(500).json({ 
+        error: `Chyba při obnově databáze: ${error.message || 'Neplatný soubor databáze'}` 
+      });
+    }
+  });
+
+  app.get('/zaloha', (req, res) => {
+    const password = req.query.heslo || req.query.password;
+    const adminPassword = process.env.ADMIN_PASSWORD || 'vinice123';
+    
+    if (!password || password !== adminPassword) {
+      return res.status(403).send(`
+        <html>
+          <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background-color: #fafaf9; color: #333; margin: 0;">
+            <div style="text-align: center; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+              <h1 style="color: #dc2626; margin-bottom: 1rem; font-size: 1.5rem;">Nepovolený přístup</h1>
+              <p>Pro stažení zálohy zadejte správné heslo v parametru adrese, např.:</p>
+              <code style="background: #f3f4f6; padding: 0.5rem; display: inline-block; border-radius: 4px; border: 1px solid #e5e7eb; margin-top: 0.5rem;">/zaloha?heslo=tvoje_heslo</code>
+            </div>
+          </body>
+        </html>
+      `);
+    }
+
+    if (fs.existsSync(dbPath)) {
+      res.download(dbPath, 'bookings-backup.db');
+    } else {
+      res.status(404).send('Databázový soubor nenalezen.');
+    }
+  });
+
   app.get('/api/bookings', (req, res) => {
     try {
       const bookings = db.prepare('SELECT * FROM bookings ORDER BY startDate DESC').all();
