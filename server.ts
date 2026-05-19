@@ -70,6 +70,14 @@ try {
   // column might already exist
 }
 
+try {
+  db.exec("ALTER TABLE events ADD COLUMN startDate TEXT;");
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE events ADD COLUMN endDate TEXT;");
+} catch (e) {}
+
 // Pre-seed some default events if table is empty
 const eventCount = db.prepare('SELECT COUNT(*) as count FROM events').get() as { count: number };
 if (eventCount.count === 0) {

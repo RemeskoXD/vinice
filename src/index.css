@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+@source "../index.tsx";
+@source "../App.tsx";
+@source "../Reveal.tsx";
+@source "../pages/**/*.tsx";
+

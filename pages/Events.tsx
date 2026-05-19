@@ -28,6 +28,25 @@ const Events: React.FC = () => {
   // Vynulujeme čas pro spravedlivé porovnání s daty z DB
   currentDate.setHours(0, 0, 0, 0);
 
+  const sortedEvents = [...events].sort((a, b) => {
+    const isMainA = a.title.toLowerCase().includes('degustace vína u spřáteleného vinařství');
+    const isMainB = b.title.toLowerCase().includes('degustace vína u spřáteleného vinařství');
+    
+    if (isMainA && !isMainB) return -1;
+    if (!isMainA && isMainB) return 1;
+
+    const dateA = a.endDate ? new Date(a.endDate) : (a.startDate ? new Date(a.startDate) : new Date(8640000000000000));
+    const dateB = b.endDate ? new Date(b.endDate) : (b.startDate ? new Date(b.startDate) : new Date(8640000000000000));
+
+    const isPastA = dateA < currentDate;
+    const isPastB = dateB < currentDate;
+
+    if (!isPastA && isPastB) return -1;
+    if (isPastA && !isPastB) return 1;
+
+    return dateA.getTime() - dateB.getTime();
+  });
+
   return (
     <div className="bg-white min-h-screen pt-32 pb-24">
       <Helmet>
@@ -43,7 +62,7 @@ const Events: React.FC = () => {
         </Reveal>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {events.map((event, idx) => {
+          {sortedEvents.map((event, idx) => {
             let isPast = false;
             
             // Check if the event is strictly in the past
