@@ -39,6 +39,7 @@ const Reservation: React.FC = () => {
   const [guests, setGuests] = useState(2);
   const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'cash'>('transfer');
   const [submitted, setSubmitted] = useState(false);
+  const [successPrice, setSuccessPrice] = useState<number>(0);
   
   const [estimatedPrice, setEstimatedPrice] = useState(0);
   const [nights, setNights] = useState(0);
@@ -186,12 +187,14 @@ const Reservation: React.FC = () => {
             body: JSON.stringify(bookingData)
         });
         if (response.ok) {
+          setSuccessPrice(finalPrice);
           setSubmitted(true);
           setRange(undefined);
           setName('');
           setEmail('');
           setPhone('');
           setMessage('');
+          setAppliedPromo(null);
         } else {
           alert('Chyba při odesílání rezervace.');
         }
@@ -278,15 +281,35 @@ const Reservation: React.FC = () => {
                   Děkujeme! Vaši poptávku jsme přijali. Pro závazné potvrzení prosím uhraďte zálohu (50 %). Zbylá část bude doplacena při příjezdu dle Vaší volby.
                 </p>
                 
-                <div className="bg-white p-6 rounded-md shadow-sm mb-8 mx-auto inline-block border border-gray-100">
+                <div className="bg-white p-6 rounded-md shadow-sm mb-8 mx-auto inline-block border border-gray-100 max-w-md w-full">
                   <p className="font-bold text-xs uppercase tracking-widest text-amber-700 mb-4">Platba zálohy přes QR kód</p>
                   <img 
-                    src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=MOCK_PLATBA" 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SPD*1.0*ACC%3ACZ8555000000008029338001*AM%3A${Math.floor(successPrice / 2)}.00*CC%3ACZK*MSG%3AZaloha%20ubytovani`} 
                     alt="QR kód pro platbu zálohy" 
-                    className="mx-auto w-32 h-32 opacity-80"
+                    className="mx-auto w-40 h-40"
                   />
-                  <p className="text-[10px] text-gray-400 mt-4 leading-relaxed max-w-[200px] mx-auto text-center">
-                    Zaslali jsme Vám také email s potvrzením a platebními údaji.
+                  
+                  <div className="mt-6 border-t border-gray-100 pt-4 text-left text-xs space-y-2">
+                    <div className="flex justify-between items-center text-amber-900 font-serif mb-2 bg-amber-50/50 p-2 border border-amber-100/50">
+                      <span className="text-[10px] uppercase tracking-wider text-amber-800 font-sans font-bold">Záloha 50% k úhradě:</span>
+                      <strong className="text-base font-bold">{Math.floor(successPrice / 2).toLocaleString('cs-CZ')} Kč</strong>
+                    </div>
+                    <p className="flex justify-between border-t border-gray-50 pt-2">
+                      <span className="text-gray-500 uppercase tracking-wider text-[9px] font-bold">Číslo účtu:</span>
+                      <span className="font-mono text-black font-semibold">8029338001 / 5500</span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span className="text-gray-500 uppercase tracking-wider text-[9px] font-bold">Banka:</span>
+                      <span className="text-black">Raiffeisenbank</span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span className="text-gray-500 uppercase tracking-wider text-[9px] font-bold">IBAN:</span>
+                      <span className="font-mono text-black text-[10px]">CZ85 5500 0000 0080 2933 8001</span>
+                    </p>
+                  </div>
+
+                  <p className="text-[10px] text-gray-400 mt-6 leading-relaxed text-center">
+                    Zaslali jsme Vám také e-mail s nejrůznějšími informacemi a platebními údaji.
                   </p>
                 </div>
 
