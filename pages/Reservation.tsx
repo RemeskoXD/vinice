@@ -79,6 +79,42 @@ const Reservation: React.FC = () => {
     return days;
   });
 
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string, discount: string } | null>(null);
+  const [promoMessage, setPromoMessage] = useState('');
+  const [isPromoChecking, setIsPromoChecking] = useState(false);
+
+  const handleApplyPromo = async () => {
+    if (!promoCodeInput.trim()) return;
+    setIsPromoChecking(true);
+    setPromoMessage('');
+    try {
+      const res = await fetch('/api/check-promo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoCodeInput.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAppliedPromo({ code: promoCodeInput.trim(), discount: data.discount });
+        setPromoMessage(`Slevový kód uplatněn: ${data.discount}`);
+        setPromoCodeInput('');
+      } else {
+        setPromoMessage(data.error || 'Neplatný kód');
+        setAppliedPromo(null);
+      }
+    } catch {
+      setPromoMessage('Chyba při ověřování kódu');
+    } finally {
+      setIsPromoChecking(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoMessage('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!range?.from || !range?.to) {
@@ -98,7 +134,8 @@ const Reservation: React.FC = () => {
       customerPhone: phone,
       guests: guests,
       paymentMethod: paymentMethod === 'transfer' ? 'převodem' : 'hotově',
-      notes: `${message}\n\nPočet hostů: ${guests}\nDoplatek: ${paymentMethod === 'transfer' ? 'Převodem' : 'Hotově'}`,
+      promoCode: appliedPromo ? appliedPromo.code : '',
+      notes: `${message}\n\nPočet hostů: ${guests}\nDoplatek: ${paymentMethod === 'transfer' ? 'Převodem' : 'Hotově'}${appliedPromo ? `\nUplatněn promo kód: ${appliedPromo.code} (${appliedPromo.discount})` : ''}`,
       status: 'pending' 
     };
 
@@ -285,6 +322,40 @@ const Reservation: React.FC = () => {
                         className="peer w-full bg-transparent border-b border-gray-200 py-3 text-black focus:outline-none focus:border-amber-700 transition-colors resize-none" 
                       />
                       <label className="absolute left-0 top-3 text-xs uppercase tracking-widest text-gray-400 pointer-events-none transition-all peer-focus:-top-4 peer-focus:text-amber-700 peer-[:not(:placeholder-shown)]:-top-4">Poznámka / Dotaz</label>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 border border-gray-100 flex flex-col gap-4">
+                      <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Máte promo kód?</label>
+                      {appliedPromo ? (
+                        <div className="flex justify-between items-center bg-green-50 text-green-800 p-3 border border-green-200">
+                          <span className="text-sm">
+                            <strong className="uppercase font-bold tracking-widest">{appliedPromo.code}</strong>: {appliedPromo.discount}
+                          </span>
+                          <button type="button" onClick={handleRemovePromo} className="text-xs uppercase font-bold tracking-widest hover:underline">Odstranit</button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-4">
+                          <input 
+                            type="text" 
+                            name="promo"
+                            id="promoInputFields"
+                            autoComplete="off"
+                            value={promoCodeInput}
+                            onChange={e => setPromoCodeInput(e.target.value.toUpperCase())}
+                            placeholder="Vložte kód"
+                            className="bg-white border text-sm uppercase border-gray-200 p-3 flex-1 focus:outline-none focus:border-amber-700"
+                          />
+                          <button 
+                            type="button" 
+                            onClick={handleApplyPromo}
+                            disabled={isPromoChecking}
+                            className="bg-black text-white px-6 uppercase text-[10px] font-bold tracking-widest hover:bg-amber-900 transition-colors disabled:opacity-50"
+                          >
+                            Použít
+                          </button>
+                        </div>
+                      )}
+                      {promoMessage && !appliedPromo && <p className="text-xs text-amber-700">{promoMessage}</p>}
                     </div>
 
                     <div className="space-y-4">

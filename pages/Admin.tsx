@@ -27,6 +27,14 @@ interface EventItem {
   link?: string;
 }
 
+interface PromoCode {
+  id: number;
+  code: string;
+  discount: string;
+  expiresAt: string | null;
+  isActive: number;
+}
+
 const ADMIN_PASSWORD = 'vinice123'; // V produkci doporučujeme přesunout do .env jako VITE_ADMIN_PASSWORD
 
 const Admin: React.FC = () => {
@@ -34,7 +42,8 @@ const Admin: React.FC = () => {
   const [password, setPassword] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
-  const [activeTab, setActiveTab] = useState<'bookings' | 'events'>('bookings');
+  const [promos, setPromos] = useState<PromoCode[]>([]);
+  const [activeTab, setActiveTab] = useState<'bookings' | 'events' | 'promos'>('bookings');
   
   // Manual booking form
   const [manualStart, setManualStart] = useState('');
@@ -53,12 +62,20 @@ const Admin: React.FC = () => {
   const [eventLink, setEventLink] = useState('');
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
 
+  // Promo form
+  const [promoCode, setPromoCode] = useState('');
+  const [promoDiscount, setPromoDiscount] = useState('');
+  const [promoExpiresAt, setPromoExpiresAt] = useState('');
+  const [promoIsActive, setPromoIsActive] = useState(true);
+  const [editingPromoId, setEditingPromoId] = useState<number | null>(null);
+
   const [showPaymentFor, setShowPaymentFor] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchBookings();
       fetchEvents();
+      fetchPromos();
     }
   }, [isAuthenticated]);
 
@@ -73,6 +90,13 @@ const Admin: React.FC = () => {
     fetch('/api/events')
       .then(res => res.json())
       .then(data => setEvents(data))
+      .catch(err => console.error(err));
+  };
+
+  const fetchPromos = () => {
+    fetch('/api/promo-codes')
+      .then(res => res.json())
+      .then(data => setPromos(data))
       .catch(err => console.error(err));
   };
 
@@ -235,6 +259,67 @@ const Admin: React.FC = () => {
     setEventLink('');
   };
 
+  const handlePromoSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      code: promoCode,
+      discount: promoDiscount,
+      expiresAt: promoExpiresAt,
+      isActive: promoIsActive ? 1 : 0
+    };
+    
+    try {
+      const res = editingPromoId 
+        ? await fetch(`/api/promo-codes/${editingPromoId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+        : await fetch('/api/promo-codes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+      
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Chyba při ukládání');
+      }
+      
+      fetchPromos();
+      handlePromoCancel();
+    } catch (error: any) {
+      alert(error.message);
+    }
+  };
+
+  const handlePromoDelete = async (id: number) => {
+    if (!confirm('Opravdu smazat tento kód?')) return;
+    try {
+      await fetch(`/api/promo-codes/${id}`, { method: 'DELETE' });
+      fetchPromos();
+    } catch (error) {
+      alert('Chyba při mazání');
+    }
+  };
+
+  const handlePromoEdit = (promo: PromoCode) => {
+    setEditingPromoId(promo.id);
+    setPromoCode(promo.code);
+    setPromoDiscount(promo.discount);
+    setPromoExpiresAt(promo.expiresAt || '');
+    setPromoIsActive(promo.isActive === 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePromoCancel = () => {
+    setEditingPromoId(null);
+    setPromoCode('');
+    setPromoDiscount('');
+    setPromoExpiresAt('');
+    setPromoIsActive(true);
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 px-6">
@@ -296,6 +381,12 @@ const Admin: React.FC = () => {
             className={`px-8 py-4 font-bold text-xs uppercase tracking-widest transition-colors ${activeTab === 'events' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
           >
             Akce
+          </button>
+          <button 
+            onClick={() => setActiveTab('promos')} 
+            className={`px-8 py-4 font-bold text-xs uppercase tracking-widest transition-colors ${activeTab === 'promos' ? 'border-b-2 border-black text-black' : 'text-gray-400 hover:text-black'}`}
+          >
+            Promo kódy
           </button>
         </div>
 
@@ -603,6 +694,117 @@ const Admin: React.FC = () => {
                             <div className="flex flex-col items-center gap-4">
                               <Calendar size={48} strokeWidth={1} className="opacity-20" />
                               <p className="text-xs uppercase tracking-[0.2em] font-bold">Zatím žádné akce</p>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'promos' && (
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
+            {/* Add/Edit Promo */}
+            <div className="xl:col-span-1">
+              <div className="bg-white p-8 shadow-sm text-sm">
+                <h2 className="text-lg font-serif mb-8 flex items-center gap-3 uppercase tracking-wider">
+                  <Plus size={20} className="text-amber-700" /> {editingPromoId ? 'Upravit promo kód' : 'Nový promo kód'}
+                </h2>
+                <form onSubmit={handlePromoSave} className="space-y-6">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Kód (např. LÉTO26)</label>
+                    <input type="text" required value={promoCode} onChange={e => setPromoCode(e.target.value.toUpperCase())} className="w-full border-b border-gray-100 p-2 focus:outline-none focus:border-amber-700 uppercase" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Sleva (popis)</label>
+                    <input type="text" required placeholder="Např. -10 %" value={promoDiscount} onChange={e => setPromoDiscount(e.target.value)} className="w-full border-b border-gray-100 p-2 focus:outline-none focus:border-amber-700" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-2">Expirace (volitelně)</label>
+                    <input type="date" value={promoExpiresAt} onChange={e => setPromoExpiresAt(e.target.value)} className="w-full border-b border-gray-100 p-2 focus:outline-none focus:border-amber-700 text-gray-500" />
+                  </div>
+                  <div className="flex items-center gap-3 pb-2 pt-2">
+                    <input type="checkbox" id="promoActive" checked={promoIsActive} onChange={e => setPromoIsActive(e.target.checked)} className="w-4 h-4 text-amber-700 focus:ring-amber-500 border-gray-300 rounded" />
+                    <label htmlFor="promoActive" className="text-xs uppercase tracking-widest text-gray-600 font-bold">Kód je aktivní</label>
+                  </div>
+                  <div className="flex gap-4 pt-4">
+                    <button type="submit" className="flex-1 bg-black text-white py-4 uppercase font-bold text-[10px] tracking-widest hover:bg-amber-900 transition-colors shadow-md">
+                      {editingPromoId ? 'Uložit' : 'Přidat'}
+                    </button>
+                    {editingPromoId && (
+                      <button type="button" onClick={handlePromoCancel} className="bg-gray-100 text-gray-600 px-6 py-4 uppercase font-bold text-[10px] tracking-widest hover:bg-gray-200 transition-colors shadow-md">
+                        Zrušit
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            {/* List Promos */}
+            <div className="xl:col-span-3">
+              <div className="bg-white p-8 md:p-12 shadow-sm min-h-[600px]">
+                <div className="flex justify-between items-center mb-10">
+                  <h2 className="text-xl font-serif uppercase tracking-wider">Správa promo kódů</h2>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                      <tr className="border-b border-gray-100 text-[10px] uppercase tracking-widest font-bold text-gray-400">
+                        <th className="pb-6">Kód</th>
+                        <th className="pb-6">Sleva</th>
+                        <th className="pb-6">Platnost</th>
+                        <th className="pb-6">Stav</th>
+                        <th className="pb-6 text-right">Správa</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {promos.map((promo) => (
+                        <tr key={promo.id} className="group hover:bg-amber-50/30 transition-colors">
+                          <td className="py-6 align-top">
+                            <p className="text-sm font-bold text-black uppercase tracking-widest">{promo.code}</p>
+                          </td>
+                          <td className="py-6 align-top">
+                             <p className="text-sm font-light text-gray-600 leading-relaxed">{promo.discount}</p>
+                          </td>
+                          <td className="py-6 align-top text-sm font-light text-gray-600">
+                             {promo.expiresAt ? new Date(promo.expiresAt).toLocaleDateString() : 'Bez expirace'}
+                          </td>
+                          <td className="py-6 align-top">
+                             <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${promo.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                               {promo.isActive ? 'Aktivní' : 'Neaktivní'}
+                             </span>
+                          </td>
+                          <td className="py-6 text-right align-top">
+                            <div className="flex justify-end items-center gap-2">
+                              <button 
+                                onClick={() => handlePromoEdit(promo)}
+                                className="bg-white border border-gray-100 p-2.5 text-gray-400 hover:text-amber-700 hover:border-amber-100 hover:bg-amber-50/50 transition-all rounded-sm shadow-sm"
+                                title="Upravit"
+                              >
+                                <Edit2 size={16} strokeWidth={1.5} />
+                              </button>
+                              <button 
+                                onClick={() => handlePromoDelete(promo.id)}
+                                className="bg-white border border-gray-100 p-2.5 text-gray-300 hover:text-red-700 hover:border-red-100 hover:bg-red-50/50 transition-all rounded-sm shadow-sm"
+                                title="Odstranit"
+                              >
+                                <Trash2 size={16} strokeWidth={1.5} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {promos.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="py-16 text-center text-gray-300">
+                            <div className="flex flex-col items-center gap-4">
+                              <p className="text-xs uppercase tracking-[0.2em] font-bold">Zatím žádné promo kódy</p>
                             </div>
                           </td>
                         </tr>

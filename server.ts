@@ -3,6 +3,7 @@ import { createServer as createViteServer } from 'vite';
 import Database from 'better-sqlite3';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
 
@@ -17,7 +18,14 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-const db = new Database('bookings.db');
+const dbPath = process.env.DB_PATH || 'bookings.db';
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+const db = new Database(dbPath);
+console.log(`Přiřazena databáze na cestě: ${dbPath}`);
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,6 +47,13 @@ db.exec(`
     type TEXT,
     link TEXT
   );
+  CREATE TABLE IF NOT EXISTS promo_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    discount TEXT,
+    expiresAt TEXT,
+    isActive INTEGER DEFAULT 1
+  );
 `);
 
 try {
@@ -49,6 +64,12 @@ try {
 
 try {
   db.exec("ALTER TABLE bookings ADD COLUMN paymentMethod TEXT DEFAULT 'hotově';");
+} catch (e) {
+  // column might already exist
+}
+
+try {
+  db.exec("ALTER TABLE bookings ADD COLUMN promoCode TEXT;");
 } catch (e) {
   // column might already exist
 }
@@ -107,10 +128,10 @@ async function startServer() {
   });
 
   app.post('/api/bookings', async (req, res) => {
-    const { startDate, endDate, customerName, customerEmail, customerPhone, notes, guests, paymentMethod } = req.body;
+    const { startDate, endDate, customerName, customerEmail, customerPhone, notes, guests, paymentMethod, promoCode } = req.body;
     try {
-      const stmt = db.prepare('INSERT INTO bookings (startDate, endDate, customerName, customerEmail, customerPhone, notes, guests, paymentMethod) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-      const info = stmt.run(startDate, endDate, customerName, customerEmail, customerPhone || '', notes || '', guests || 2, paymentMethod || 'hotově');
+      const stmt = db.prepare('INSERT INTO bookings (startDate, endDate, customerName, customerEmail, customerPhone, notes, guests, paymentMethod, promoCode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      const info = stmt.run(startDate, endDate, customerName, customerEmail, customerPhone || '', notes || '', guests || 2, paymentMethod || 'hotově', promoCode || null);
       
       if (customerEmail) {
         try {
@@ -258,6 +279,72 @@ async function startServer() {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: 'Failed to delete event' });
+    }
+  });
+
+  // Promo Codes API
+  app.get('/api/promo-codes', (req, res) => {
+    try {
+      const promos = db.prepare('SELECT * FROM promo_codes ORDER BY id DESC').all();
+      res.json(promos);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch promo codes' });
+    }
+  });
+
+  app.post('/api/promo-codes', (req, res) => {
+    const { code, discount, expiresAt, isActive } = req.body;
+    try {
+      const stmt = db.prepare('INSERT INTO promo_codes (code, discount, expiresAt, isActive) VALUES (?, ?, ?, ?)');
+      const info = stmt.run(code, discount || '', expiresAt || null, isActive !== undefined ? isActive : 1);
+      res.json({ id: info.lastInsertRowid, success: true });
+    } catch (error: any) {
+      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        return res.status(400).json({ error: 'Tento kód již existuje' });
+      }
+      res.status(500).json({ error: 'Failed to create promo code' });
+    }
+  });
+
+  app.put('/api/promo-codes/:id', (req, res) => {
+    const { id } = req.params;
+    const { code, discount, expiresAt, isActive } = req.body;
+    try {
+      const stmt = db.prepare('UPDATE promo_codes SET code = ?, discount = ?, expiresAt = ?, isActive = ? WHERE id = ?');
+      stmt.run(code, discount || '', expiresAt || null, isActive !== undefined ? isActive : 1, id);
+      res.json({ success: true });
+    } catch (error: any) {
+      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        return res.status(400).json({ error: 'Tento kód již existuje' });
+      }
+      res.status(500).json({ error: 'Failed to update promo code' });
+    }
+  });
+
+  app.delete('/api/promo-codes/:id', (req, res) => {
+    const { id } = req.params;
+    try {
+      const stmt = db.prepare('DELETE FROM promo_codes WHERE id = ?');
+      stmt.run(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to delete promo code' });
+    }
+  });
+
+  app.post('/api/check-promo', (req, res) => {
+    const { code } = req.body;
+    try {
+      const promo = db.prepare('SELECT * FROM promo_codes WHERE code = ? AND isActive = 1').get(code) as any;
+      if (!promo) {
+        return res.status(404).json({ error: 'Neplatný nebo neexistující kód' });
+      }
+      if (promo.expiresAt && new Date(promo.expiresAt) < new Date()) {
+        return res.status(400).json({ error: 'Platnost kódu vypršela' });
+      }
+      res.json({ success: true, discount: promo.discount });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to check promo code' });
     }
   });
 
