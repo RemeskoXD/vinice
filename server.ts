@@ -81,35 +81,101 @@ try {
 // Pre-seed some default events if table is empty
 const eventCount = db.prepare('SELECT COUNT(*) as count FROM events').get() as { count: number };
 if (eventCount.count === 0) {
-  const insertEvent = db.prepare('INSERT INTO events (title, date, desc, type) VALUES (?, ?, ?, ?)');
+  const insertEvent = db.prepare('INSERT INTO events (title, date, desc, type, link, startDate, endDate) VALUES (?, ?, ?, ?, ?, ?, ?)');
   const defaultEvents = [
     {
-      title: "Zahájení sezóny 2026",
-      date: "Duben 2026",
-      desc: "Oficiální otevření našeho domu pro letošní sezónu. Přijďte si užít jarní vinice.",
-      type: "U nás"
+      title: 'Degustace vína u spřáteleného vinařství',
+      date: 'Celoroční akce',
+      desc: 'Můžeme pro vás domluvit soukromou degustaci v nedalekém sklípku. Poznejte pravou chuť Mutěnic.',
+      type: 'Celoroční',
+      link: 'https://www.vincur.eu/',
+      startDate: '2026-01-01',
+      endDate: '2099-12-31'
     },
     {
-      title: "Mutěnické búdy dokořán",
-      date: "Červen 2026",
-      desc: "Tradiční akce, kdy vinaři v Mutěnicích otevírají své sklepy pro veřejnost. Degustace, hudba a skvělá atmosféra.",
-      type: "V obci"
+      title: 'Den otevřených sklepů',
+      date: '25. 4. 2026',
+      desc: 'Tradiční jarní otevírání sklepů v Mutěnicích s degustací.',
+      type: 'V obci',
+      link: 'https://www.vinozmutenic.cz/akce/den-otevrenych-sklepu',
+      startDate: '2026-04-25',
+      endDate: '2026-04-25'
     },
     {
-      title: "Vinobraní pod Vyšickem",
-      date: "Září 2026",
-      desc: "Oslava sklizně hroznů s bohatým kulturním programem, burčákem a folklorními vystoupeními.",
-      type: "Místní akce"
+      title: 'Ameriky mezi sklepy',
+      date: '14. – 17. 5. 2026',
+      desc: 'Setkání a přehlídka klasických amerických vozů.',
+      type: 'V obci',
+      link: 'https://www.kudyznudy.cz/akce/ameriky-mezi-sklepy-2026-charitativni-akce-v-muten?utm_source=google&utm_medium=cpc&utm_campaign=MGNS_PMAX_Index%3A%20Akce_SS&utm_id=21750560350&gad_source=1&gad_campaignid=21740420382&gbraid=0AAAAADAmipuYHTZuxfRBga1hOqZKR5pZO&gclid=Cj0KCQjwzqXQBhD2ARIsAKrIeU_p0TLA0ICbPljvblJGwtZ4odErXvaA1Sx-4xTZOE8eJ9jKd9VAHl0aAjAFEALw_wcB',
+      startDate: '2026-05-14',
+      endDate: '2026-05-17'
     },
     {
-      title: "Degustace u místního vinaře",
-      date: "Celoročně / na domluvu",
-      desc: "Můžeme pro vás domluvit soukromou degustaci v nedalekém sklípku. Poznejte pravou chuť Mutěnic.",
-      type: "Zážitek"
+      title: 'Při měsíčku na skleničku',
+      date: '6. 6. 2026',
+      desc: 'Večerní a noční putování po sklepech s romantickou atmosférou.',
+      type: 'V obci',
+      link: 'https://www.vinarskecentrum.cz/o-vine/vinarske-akce/LT7gdd9IS_OUtT5vOCRgaA-akce-pri-mesicku-na-sklenicku',
+      startDate: '2026-06-06',
+      endDate: '2026-06-06'
+    },
+    {
+      title: 'Víno mezi řádky',
+      date: '13. 6. 2026',
+      desc: 'Příjemná degustace přímo ve vinohradu s doprovodným programem.',
+      type: 'V obci',
+      link: 'https://www.vinarskecentrum.cz/o-vine/vinarske-akce/XVg93u4EQtKKBIQXEsxFTA-akce-vino-mezi-radky',
+      startDate: '2026-06-13',
+      endDate: '2026-06-13'
+    },
+    {
+      title: 'Festival Mezi Sklepy',
+      date: '19. – 20. 6. 2026',
+      desc: 'Velký letní hudební a vinařský festival v areálu vinných sklepů.',
+      type: 'V obci',
+      link: 'https://festivalmezisklepy.cz/',
+      startDate: '2026-06-19',
+      endDate: '2026-06-20'
+    },
+    {
+      title: 'Noc pod Mutěnskou horů',
+      date: '4. 7. 2026',
+      desc: 'Večerní zábava, hudba a posezení u cimbálu s vínem.',
+      type: 'V obci',
+      link: 'https://www.vinarskecentrum.cz/o-vine/vinarske-akce/F_iqMj7dRw2xkNvWl2f0Vg-akce-noc-pod-mutensku-horu',
+      startDate: '2026-07-04',
+      endDate: '2026-07-04'
+    },
+    {
+      title: 'Mutěnické vinobraní',
+      date: '4. – 6. 9. 2026',
+      desc: 'Tradiční slavnost sklizně hroznů s průvodem a folklorem.',
+      type: 'V obci',
+      link: 'https://www.jizni-morava.cz/cz/kalendar-akci/o82166-mutenicke-vinobrani',
+      startDate: '2026-09-04',
+      endDate: '2026-09-06'
+    },
+    {
+      title: 'Burčákový pochod',
+      date: '10. 10. 2026',
+      desc: 'Turistický pochod mezi vinicemi s ochutnávkou letošního burčáku.',
+      type: 'V obci',
+      link: 'https://www.facebook.com/events/bur%C4%8D%C3%A1kov%C3%BD-pochod-mut%C4%9Bnice-10102026/2290137114798900/',
+      startDate: '2026-10-10',
+      endDate: '2026-10-10'
+    },
+    {
+      title: 'Svatokateřinské slavnosti vína',
+      date: '14. 11. 2026',
+      desc: 'Svěcení a vůbec první ochutnávka mladých vín.',
+      type: 'V obci',
+      link: 'https://www.vinozmutenic.cz/14-11-2026-svatokaterinske-slavnosti-vina',
+      startDate: '2026-11-14',
+      endDate: '2026-11-14'
     }
   ];
   const insertMany = db.transaction((events) => {
-    for (const ev of events) insertEvent.run(ev.title, ev.date, ev.desc, ev.type);
+    for (const ev of events) insertEvent.run(ev.title, ev.date, ev.desc, ev.type, ev.link, ev.startDate, ev.endDate);
   });
   insertMany(defaultEvents);
 }
@@ -364,7 +430,7 @@ async function startServer() {
     // Serve static files in production
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*all', (req, res) => {
+    app.get(/^(.*)$/, (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
