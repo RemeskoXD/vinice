@@ -394,7 +394,7 @@ V SRDCI VINIC
               <html><body>
               <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
                 <div style="text-align: center; margin-bottom: 20px;">
-                  <img src="https://vsrdcivinic.cz/logo.png" alt="V SRDCI VINIC" style="max-height: 80px;" />
+                  <img src="https://web2.itnahodinu.cz/vinice/1/logo.webp" alt="V SRDCI VINIC" style="max-height: 80px;" />
                 </div>
                 <h2 style="color: #b45309;">Děkujeme za Vaši poptávku ubytování!</h2>
                 <p>Vážený zákazníku ${customerName},</p>
@@ -510,7 +510,7 @@ V SRDCI VINIC
                 <body>
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
                   <div style="text-align: center; margin-bottom: 20px;">
-                    <img src="https://vsrdcivinic.cz/logo.png" alt="V SRDCI VINIC" style="max-height: 80px;" />
+                    <img src="https://web2.itnahodinu.cz/vinice/1/logo.webp" alt="V SRDCI VINIC" style="max-height: 80px;" />
                   </div>
                   <h2 style="color: #166534;">Vaše rezervace byla potvrzena!</h2>
                   <p>Vážený zákazníku ${booking.customerName},</p>
@@ -592,7 +592,7 @@ Sklepní ulice
             <body>
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
               <div style="text-align: center; margin-bottom: 20px;">
-                <img src="https://vsrdcivinic.cz/logo.png" alt="V SRDCI VINIC" style="max-height: 80px;" />
+                <img src="https://web2.itnahodinu.cz/vinice/1/logo.webp" alt="V SRDCI VINIC" style="max-height: 80px;" />
               </div>
               <h2 style="color: #b45309;">Děkujeme za návštěvu!</h2>
               <p>Vážený zákazníku ${booking.customerName},</p>
@@ -663,7 +663,7 @@ V SRDCI VINIC
             <html><body>
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
               <div style="text-align: center; margin-bottom: 20px;">
-                <img src="https://vsrdcivinic.cz/logo.png" alt="V SRDCI VINIC" style="max-height: 80px;" />
+                <img src="https://web2.itnahodinu.cz/vinice/1/logo.webp" alt="V SRDCI VINIC" style="max-height: 80px;" />
               </div>
               <h2 style="color: #166534;">Záloha byla úspěšně přijata!</h2>
               <p>Vážený zákazníku ${booking.customerName},</p>
@@ -719,7 +719,7 @@ V SRDCI VINIC
             <html><body>
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
               <div style="text-align: center; margin-bottom: 20px;">
-                <img src="https://vsrdcivinic.cz/logo.png" alt="V SRDCI VINIC" style="max-height: 80px;" />
+                <img src="https://web2.itnahodinu.cz/vinice/1/logo.webp" alt="V SRDCI VINIC" style="max-height: 80px;" />
               </div>
               <h2 style="color: #166534;">Pobyt plně uhrazen!</h2>
               <p>Vážený zákazníku ${booking.customerName},</p>
@@ -778,7 +778,7 @@ V SRDCI VINIC
               <html><body>
               <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
                 <div style="text-align: center; margin-bottom: 20px;">
-                  <img src="https://vsrdcivinic.cz/logo.png" alt="V SRDCI VINIC" style="max-height: 80px;" />
+                  <img src="https://web2.itnahodinu.cz/vinice/1/logo.webp" alt="V SRDCI VINIC" style="max-height: 80px;" />
                 </div>
                 <h2 style="color: #dc2626;">Vaše rezervace byla stornována!</h2>
                 <p>Vážený zákazníku ${booking.customerName},</p>
