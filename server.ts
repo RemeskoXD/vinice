@@ -3,10 +3,7 @@ import Database from 'better-sqlite3';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.ethereal.email',
