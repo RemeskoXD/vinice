@@ -50,6 +50,12 @@ const Reservation: React.FC = () => {
       .catch(err => console.error('Failed to fetch bookings', err));
   }, []);
 
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string, discount: string } | null>(null);
+  const [promoMessage, setPromoMessage] = useState('');
+  const [isPromoChecking, setIsPromoChecking] = useState(false);
+  const [finalPrice, setFinalPrice] = useState(0);
+
   // Výpočet ceny při změně termínu
   useEffect(() => {
     if (range?.from && range?.to) {
@@ -66,6 +72,20 @@ const Reservation: React.FC = () => {
     }
   }, [range]);
 
+  useEffect(() => {
+    let price = estimatedPrice;
+    if (appliedPromo) {
+        if (appliedPromo.discount.includes('%')) {
+            const percent = parseInt(appliedPromo.discount.replace('%', ''));
+            price = Math.floor(price * (1 - percent / 100));
+        } else if (appliedPromo.discount.includes('Kč') || appliedPromo.discount.includes('CZK')) {
+            const amount = parseInt(appliedPromo.discount.replace(/\\D/g, ''));
+            price = Math.max(0, price - amount);
+        }
+    }
+    setFinalPrice(price);
+  }, [estimatedPrice, appliedPromo]);
+
   const disabledDays = bookings.flatMap(b => {
     if (b.status === 'cancelled') return [];
     const start = new Date(b.startDate);
@@ -79,10 +99,30 @@ const Reservation: React.FC = () => {
     return days;
   });
 
-  const [promoCodeInput, setPromoCodeInput] = useState('');
-  const [appliedPromo, setAppliedPromo] = useState<{ code: string, discount: string } | null>(null);
-  const [promoMessage, setPromoMessage] = useState('');
-  const [isPromoChecking, setIsPromoChecking] = useState(false);
+  const handleRangeSelect = (newRange: DateRange | undefined) => {
+    if (!newRange) {
+      setRange(undefined);
+      return;
+    }
+    if (newRange.from && newRange.to) {
+      const start = new Date(newRange.from);
+      start.setHours(0,0,0,0);
+      const end = new Date(newRange.to);
+      end.setHours(0,0,0,0);
+      
+      const overlap = disabledDays.some(disabledDay => {
+        const d = new Date(disabledDay);
+        d.setHours(0,0,0,0);
+        return d >= start && d <= end;
+      });
+      
+      if (overlap) {
+        setRange({ from: newRange.from });
+        return;
+      }
+    }
+    setRange(newRange);
+  };
 
   const handleApplyPromo = async () => {
     if (!promoCodeInput.trim()) return;
@@ -198,7 +238,7 @@ const Reservation: React.FC = () => {
                 <DayPicker
                   mode="range"
                   selected={range}
-                  onSelect={setRange}
+                  onSelect={handleRangeSelect}
                   locale={cs}
                   disabled={disabledDays}
                   min={2}
@@ -405,15 +445,15 @@ const Reservation: React.FC = () => {
                                 <div className="space-y-2">
                                   <div className="flex justify-between md:justify-end gap-8">
                                     <span className="text-[10px] uppercase tracking-widest text-amber-800 font-bold">Celková cena:</span>
-                                    <span className="font-serif text-amber-900">{estimatedPrice.toLocaleString('cs-CZ')} Kč</span>
+                                    <span className="font-serif text-amber-900">{finalPrice.toLocaleString('cs-CZ')} Kč</span>
                                   </div>
                                   <div className="flex justify-between md:justify-end gap-8">
                                     <span className="text-[10px] uppercase tracking-widest text-amber-800 font-bold">Záloha (50 % předem):</span>
-                                    <span className="font-serif text-amber-900 font-bold">{(estimatedPrice / 2).toLocaleString('cs-CZ')} Kč</span>
+                                    <span className="font-serif text-amber-900 font-bold">{(finalPrice / 2).toLocaleString('cs-CZ')} Kč</span>
                                   </div>
                                   <div className="flex justify-between md:justify-end gap-8">
                                     <span className="text-[10px] uppercase tracking-widest text-amber-800 font-bold">Doplatek ({paymentMethod === 'cash' ? 'hotově' : 'převodem'}):</span>
-                                    <span className="font-serif text-amber-900">{(estimatedPrice / 2).toLocaleString('cs-CZ')} Kč</span>
+                                    <span className="font-serif text-amber-900">{(finalPrice / 2).toLocaleString('cs-CZ')} Kč</span>
                                   </div>
                                 </div>
                             </div>

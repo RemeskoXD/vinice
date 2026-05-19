@@ -220,6 +220,32 @@ async function startServer() {
   app.post('/api/bookings', async (req, res) => {
     const { startDate, endDate, customerName, customerEmail, customerPhone, notes, guests, paymentMethod, promoCode } = req.body;
     try {
+      const { differenceInDays, getMonth, addDays } = require('date-fns');
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      let totalPrice = 0;
+      let current = new Date(start);
+      while (current < end) {
+        const month = getMonth(current);
+        if (month >= 3 && month <= 9) totalPrice += 6000;
+        else totalPrice += 4500;
+        current = addDays(current, 1);
+      }
+      
+      if (promoCode) {
+        const promo = db.prepare('SELECT * FROM promo_codes WHERE code = ? AND isActive = 1').get(promoCode) as any;
+        if (promo && (!promo.expiresAt || new Date(promo.expiresAt) >= new Date())) {
+          if (promo.discount.includes('%')) {
+            const percent = parseInt(promo.discount.replace('%', ''));
+            totalPrice = Math.floor(totalPrice * (1 - percent / 100));
+          } else if (promo.discount.includes('Kč') || promo.discount.includes('CZK')) {
+            const amount = parseInt(promo.discount.replace(/\\D/g, ''));
+            totalPrice = Math.max(0, totalPrice - amount);
+          }
+        }
+      }
+      const depositPrice = Math.floor(totalPrice / 2);
+
       const stmt = db.prepare('INSERT INTO bookings (startDate, endDate, customerName, customerEmail, customerPhone, notes, guests, paymentMethod, promoCode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
       const info = stmt.run(startDate, endDate, customerName, customerEmail, customerPhone || '', notes || '', guests || 2, paymentMethod || 'hotově', promoCode || null);
       
@@ -234,14 +260,15 @@ Užitečné informace pro Váš pobyt:
 - Kuřáci u nás najdou azyl na terase. Vnitřní prostory jsou plně nekuřácké, ale elektronické cigarety jsou povoleny.
 - Víno s sebou nevozte, ve sklepě ho máme pro Vás připraveno dostatek! :D
 
-Odkaz na QR platbu zálohy (50 %): https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SPD*1.0*ACC%3ACZ8555000000008029338001*MSG%3AZaloha%20ubytovani
+Odkaz na QR platbu zálohy (50 % - ${depositPrice} Kč): https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SPD*1.0*ACC%3ACZ8555000000008029338001*AM%3A${depositPrice}.00*CC%3ACZK*MSG%3AZaloha%20ubytovani
 Nebo prosím zašlete platbu bankovním převodem na účet:
+Částka k platbě (Záloha 50 %): ${depositPrice} Kč
 Číslo účtu: 8029338001/5500
 Banka: Raiffeisenbank
 IBAN: CZ85 5500 0000 0080 2933 8001
 SWIFT/BIC: RZBCCZPP
 
-Vybraný způsob doplatku zbylých 50 %: ${paymentMethod}
+Vybraný způsob doplatku zbylých 50 % (${totalPrice - depositPrice} Kč): ${paymentMethod}
 
 Ubytovatelé na Vás budou čekat. 
 
@@ -267,6 +294,9 @@ V SRDCI VINIC
             html: `
               <html><body>
               <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <img src="https://vsrdcivinic.cz/logo.png" alt="V SRDCI VINIC" style="max-height: 80px;" />
+                </div>
                 <h2 style="color: #b45309;">Děkujeme za Vaši poptávku ubytování!</h2>
                 <p>Vážený zákazníku ${customerName},</p>
                 <p>Vaši poptávku jsme úspěšně přijali. Během <b>48 hodin</b> Vám potvrdíme rezervaci.</p>
@@ -277,15 +307,16 @@ V SRDCI VINIC
                     <li>Víno s sebou nevozte, ve sklepě ho máme pro Vás připraveno dostatek! :D</li>
                   </ul>
                 </div>
-                <p>Pro závazné potvrzení prosíme o uhrazení zálohy (50 %). Zde je QR kód pro platbu, nebo můžete využít bankovní údaje níže:</p>
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SPD*1.0*ACC%3ACZ8555000000008029338001*MSG%3AZaloha%20ubytovani" alt="QR kód pro platbu zálohy" style="display: block; margin: 20px auto; width: 150px; height: 150px;" />
+                <p>Pro závazné potvrzení prosíme o uhrazení zálohy (50 % - <b>${depositPrice} Kč</b>). Zde je QR kód pro platbu, nebo můžete využít bankovní údaje níže:</p>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SPD*1.0*ACC%3ACZ8555000000008029338001*AM%3A${depositPrice}.00*CC%3ACZK*MSG%3AZaloha%20ubytovani" alt="QR kód pro platbu zálohy" style="display: block; margin: 20px auto; width: 150px; height: 150px;" />
                 <div style="background: #f9fafb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                  <p style="margin: 0 0 5px 0;"><b>Částka k platbě (Záloha 50 %):</b> ${depositPrice} Kč</p>
                   <p style="margin: 0 0 5px 0;"><b>Číslo účtu:</b> 8029338001/5500</p>
                   <p style="margin: 0 0 5px 0;"><b>Banka:</b> Raiffeisenbank</p>
                   <p style="margin: 0 0 5px 0;"><b>IBAN:</b> CZ85 5500 0000 0080 2933 8001</p>
                   <p style="margin: 0;"><b>SWIFT/BIC:</b> RZBC CZ PP</p>
                 </div>
-                <p>Vybraný způsob doplatku zbylých 50 %: <b>${paymentMethod}</b></p>
+                <p>Vybraný způsob doplatku zbylých 50 % (<b>${totalPrice - depositPrice} Kč</b>): <b>${paymentMethod}</b></p>
                 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 13px; color: #555;">
                   <p><b>Důležité informace a podmínky dodání</b></p>
@@ -379,6 +410,9 @@ V SRDCI VINIC
                 <html>
                 <body>
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                  <div style="text-align: center; margin-bottom: 20px;">
+                    <img src="https://vsrdcivinic.cz/logo.png" alt="V SRDCI VINIC" style="max-height: 80px;" />
+                  </div>
                   <h2 style="color: #166534;">Vaše rezervace byla potvrzena!</h2>
                   <p>Vážený zákazníku ${booking.customerName},</p>
                   <p>velmi nás to těší, Vaše rezervace v termínu <b>${booking.startDate} - ${booking.endDate}</b> byla právě závazně potvrzena.</p>
@@ -458,6 +492,9 @@ Sklepní ulice
             <html>
             <body>
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+              <div style="text-align: center; margin-bottom: 20px;">
+                <img src="https://vsrdcivinic.cz/logo.png" alt="V SRDCI VINIC" style="max-height: 80px;" />
+              </div>
               <h2 style="color: #b45309;">Děkujeme za návštěvu!</h2>
               <p>Vážený zákazníku ${booking.customerName},</p>
               <p>děkujeme, že jste si vybrali naše ubytování V SRDCI VINIC.</p>
@@ -526,6 +563,9 @@ V SRDCI VINIC
           html: `
             <html><body>
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+              <div style="text-align: center; margin-bottom: 20px;">
+                <img src="https://vsrdcivinic.cz/logo.png" alt="V SRDCI VINIC" style="max-height: 80px;" />
+              </div>
               <h2 style="color: #166534;">Záloha byla úspěšně přijata!</h2>
               <p>Vážený zákazníku ${booking.customerName},</p>
               <p>potvrzujeme přijetí zálohy na Váš pobyt u nás.</p>
@@ -579,6 +619,9 @@ V SRDCI VINIC
           html: `
             <html><body>
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+              <div style="text-align: center; margin-bottom: 20px;">
+                <img src="https://vsrdcivinic.cz/logo.png" alt="V SRDCI VINIC" style="max-height: 80px;" />
+              </div>
               <h2 style="color: #166534;">Pobyt plně uhrazen!</h2>
               <p>Vážený zákazníku ${booking.customerName},</p>
               <p>potvrzujeme přijetí úhrady celé částky za Váš pobyt.</p>
@@ -635,6 +678,9 @@ V SRDCI VINIC
             html: `
               <html><body>
               <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                  <img src="https://vsrdcivinic.cz/logo.png" alt="V SRDCI VINIC" style="max-height: 80px;" />
+                </div>
                 <h2 style="color: #dc2626;">Vaše rezervace byla stornována!</h2>
                 <p>Vážený zákazníku ${booking.customerName},</p>
                 <p>Vaše rezervace v termínu <b>${booking.startDate} - ${booking.endDate}</b> byla stornována.</p>

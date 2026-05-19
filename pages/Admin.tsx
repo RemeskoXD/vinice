@@ -75,6 +75,8 @@ const Admin: React.FC = () => {
   const [cancelMessage, setCancelMessage] = useState('');
   
   const [sendingAction, setSendingAction] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{title: string, message: string, confirmText: string, onConfirm: () => void} | null>(null);
+  const [alertDialog, setAlertDialog] = useState<{title: string, message: string} | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -110,47 +112,64 @@ const Admin: React.FC = () => {
     if (password === ADMIN_PASSWORD) {
       setIsAuthenticated(true);
     } else {
-      alert('Špatné heslo');
+      setAlertDialog({title: 'Chyba', message: 'Špatné heslo'});
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Opravdu smazat tuto rezervaci?')) return;
-    
-    try {
-      await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
-      fetchBookings();
-    } catch (error) {
-      alert('Chyba při mazání');
-    }
+  const handleDelete = (id: number) => {
+    setConfirmDialog({
+      title: 'Smazat rezervaci',
+      message: 'Opravdu smazat tuto rezervaci?',
+      confirmText: 'Smazat',
+      onConfirm: async () => {
+        try {
+          await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
+          fetchBookings();
+        } catch (error) {
+          setAlertDialog({title: 'Chyba', message: 'Chyba při mazání'});
+        }
+      }
+    });
   };
 
-  const handleConfirm = async (id: number) => {
-    if (!confirm('Chcete tuto rezervaci potvrdit? Hostovi bude odeslán e-mail.')) return;
-    try {
-      await fetch(`/api/bookings/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'confirmed' })
-      });
-      fetchBookings();
-    } catch (error) {
-      alert('Chyba při potvrzování');
-    }
+  const handleConfirm = (id: number) => {
+    setConfirmDialog({
+      title: 'Potvrdit rezervaci',
+      message: 'Chcete tuto rezervaci potvrdit? Hostovi bude odeslán e-mail.',
+      confirmText: 'Potvrdit',
+      onConfirm: async () => {
+        try {
+          await fetch(`/api/bookings/${id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'confirmed' })
+          });
+          fetchBookings();
+        } catch (error) {
+          setAlertDialog({title: 'Chyba', message: 'Chyba při potvrzování'});
+        }
+      }
+    });
   };
 
-  const handleCancel = async (id: number) => {
-    if (!confirm('Opravdu chcete tuto rezervaci stornovat? Termín se opět uvolní.')) return;
-    try {
-      await fetch(`/api/bookings/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'cancelled' })
-      });
-      fetchBookings();
-    } catch (error) {
-      alert('Chyba při stornování');
-    }
+  const handleCancel = (id: number) => {
+    setConfirmDialog({
+      title: 'Stornovat rezervaci',
+      message: 'Opravdu chcete tuto rezervaci stornovat? Termín se opět uvolní.',
+      confirmText: 'Stornovat',
+      onConfirm: async () => {
+        try {
+          await fetch(`/api/bookings/${id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'cancelled' })
+          });
+          fetchBookings();
+        } catch (error) {
+          setAlertDialog({title: 'Chyba', message: 'Chyba při stornování'});
+        }
+      }
+    });
   };
 
   const handleCancelWithMessage = async (e: React.FormEvent) => {
@@ -167,56 +186,74 @@ const Admin: React.FC = () => {
       setCancelBookingFor(null);
       setCancelMessage('');
     } catch (error) {
-      alert('Chyba při stornování');
+      setAlertDialog({title: 'Chyba', message: 'Chyba při stornování'});
     } finally {
       setSendingAction(null);
     }
   };
 
-  const handleSendDepositPaid = async (id: number) => {
-    if (!confirm('Odeslat potvrzení o přijetí zálohy hostovi na e-mail?')) return;
-    setSendingAction(`deposit-${id}`);
-    try {
-      const res = await fetch(`/api/bookings/${id}/send-deposit-paid`, { method: 'POST' });
-      if (res.ok) alert('Potvrzení úspěšně odesláno.');
-      else alert('E-mail se nepodařilo odeslat.');
-    } catch (error) {
-      alert('Chyba při odesílání e-mailu.');
-    } finally {
-      setSendingAction(null);
-    }
+  const handleSendDepositPaid = (id: number) => {
+    setConfirmDialog({
+      title: 'Záloha',
+      message: 'Odeslat potvrzení o přijetí zálohy hostovi na e-mail?',
+      confirmText: 'Odeslat',
+      onConfirm: async () => {
+        setSendingAction(`deposit-${id}`);
+        try {
+          const res = await fetch(`/api/bookings/${id}/send-deposit-paid`, { method: 'POST' });
+          if (res.ok) setAlertDialog({title: 'Úspěch', message: 'Potvrzení úspěšně odesláno.'});
+          else setAlertDialog({title: 'Chyba', message: 'E-mail se nepodařilo odeslat.'});
+        } catch (error) {
+          setAlertDialog({title: 'Chyba', message: 'Chyba při odesílání e-mailu.'});
+        } finally {
+          setSendingAction(null);
+        }
+      }
+    });
   };
 
-  const handleSendFullyPaid = async (id: number) => {
-    if (!confirm('Odeslat potvrzení o plné úhradě hostovi na e-mail?')) return;
-    setSendingAction(`fully-${id}`);
-    try {
-      const res = await fetch(`/api/bookings/${id}/send-fully-paid`, { method: 'POST' });
-      if (res.ok) alert('Poděkování úspěšně odesláno.');
-      else alert('E-mail se nepodařilo odeslat.');
-    } catch (error) {
-      alert('Chyba při odesílání e-mailu.');
-    } finally {
-      setSendingAction(null);
-    }
+  const handleSendFullyPaid = (id: number) => {
+    setConfirmDialog({
+      title: 'Plná úhrada',
+      message: 'Odeslat potvrzení o plné úhradě hostovi na e-mail?',
+      confirmText: 'Odeslat',
+      onConfirm: async () => {
+        setSendingAction(`fully-${id}`);
+        try {
+          const res = await fetch(`/api/bookings/${id}/send-fully-paid`, { method: 'POST' });
+          if (res.ok) setAlertDialog({title: 'Úspěch', message: 'Potvrzení úspěšně odesláno.'});
+          else setAlertDialog({title: 'Chyba', message: 'E-mail se nepodařilo odeslat.'});
+        } catch (error) {
+          setAlertDialog({title: 'Chyba', message: 'Chyba při odesílání e-mailu.'});
+        } finally {
+          setSendingAction(null);
+        }
+      }
+    });
   };
 
   const [sendingThanks, setSendingThanks] = useState<number | null>(null);
-  const handleSendThanks = async (id: number) => {
-    if (!confirm('Odeslat poděkování hostovi na e-mail?')) return;
-    setSendingThanks(id);
-    try {
-      const res = await fetch(`/api/bookings/${id}/send-thanks`, { method: 'POST' });
-      if (res.ok) {
-        alert('Poděkování bylo úspěšně odesláno.');
-      } else {
-        alert('E-mail se nepodařilo odeslat. Možná není k dispozici adresa zadána zákazníkem.');
+  const handleSendThanks = (id: number) => {
+    setConfirmDialog({
+      title: 'Poděkování',
+      message: 'Odeslat poděkování hostovi na e-mail?',
+      confirmText: 'Odeslat',
+      onConfirm: async () => {
+        setSendingThanks(id);
+        try {
+          const res = await fetch(`/api/bookings/${id}/send-thanks`, { method: 'POST' });
+          if (res.ok) {
+            setAlertDialog({title: 'Úspěch', message: 'Poděkování bylo úspěšně odesláno.'});
+          } else {
+            setAlertDialog({title: 'Chyba', message: 'E-mail se nepodařilo odeslat. Možná není k dispozici adresa zadána zákazníkem.'});
+          }
+        } catch (error) {
+          setAlertDialog({title: 'Chyba', message: 'Chyba při odesílání e-mailu.'});
+        } finally {
+          setSendingThanks(null);
+        }
       }
-    } catch (error) {
-      alert('Chyba při odesílání e-mailu.');
-    } finally {
-      setSendingThanks(null);
-    }
+    });
   };
 
   const handleManualAdd = async (e: React.FormEvent) => {
@@ -242,7 +279,7 @@ const Admin: React.FC = () => {
       setManualPhone('');
       setManualNotes('');
     } catch (error) {
-      alert('Chyba při přidávání');
+      setAlertDialog({title: 'Chyba', message: 'Chyba při přidávání'});
     }
   };
 
@@ -275,18 +312,24 @@ const Admin: React.FC = () => {
       fetchEvents();
       handleEventCancel();
     } catch (error) {
-      alert('Chyba při ukládání akce');
+      setAlertDialog({title: 'Chyba', message: 'Chyba při ukládání akce'});
     }
   };
 
-  const handleEventDelete = async (id: number) => {
-    if (!confirm('Opravdu smazat tuto akci?')) return;
-    try {
-      await fetch(`/api/events/${id}`, { method: 'DELETE' });
-      fetchEvents();
-    } catch (error) {
-      alert('Chyba při mazání');
-    }
+  const handleEventDelete = (id: number) => {
+    setConfirmDialog({
+      title: 'Smazat akci',
+      message: 'Opravdu smazat tuto akci?',
+      confirmText: 'Smazat',
+      onConfirm: async () => {
+        try {
+          await fetch(`/api/events/${id}`, { method: 'DELETE' });
+          fetchEvents();
+        } catch (error) {
+          setAlertDialog({title: 'Chyba', message: 'Chyba při mazání'});
+        }
+      }
+    });
   };
 
   const handleEventEdit = (evt: EventItem) => {
@@ -342,18 +385,24 @@ const Admin: React.FC = () => {
       fetchPromos();
       handlePromoCancel();
     } catch (error: any) {
-      alert(error.message);
+      setAlertDialog({title: 'Chyba', message: error.message});
     }
   };
 
-  const handlePromoDelete = async (id: number) => {
-    if (!confirm('Opravdu smazat tento kód?')) return;
-    try {
-      await fetch(`/api/promo-codes/${id}`, { method: 'DELETE' });
-      fetchPromos();
-    } catch (error) {
-      alert('Chyba při mazání');
-    }
+  const handlePromoDelete = (id: number) => {
+    setConfirmDialog({
+      title: 'Smazat kód',
+      message: 'Opravdu smazat tento kód?',
+      confirmText: 'Smazat',
+      onConfirm: async () => {
+        try {
+          await fetch(`/api/promo-codes/${id}`, { method: 'DELETE' });
+          fetchPromos();
+        } catch (error) {
+          setAlertDialog({title: 'Chyba', message: 'Chyba při mazání'});
+        }
+      }
+    });
   };
 
   const handlePromoEdit = (promo: PromoCode) => {
@@ -1105,6 +1154,60 @@ const Admin: React.FC = () => {
                >
                  Zavřít detail
                </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alert Modal */}
+      {alertDialog && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white max-w-sm w-full shadow-2xl relative">
+            <div className="p-8">
+              <h3 className="text-xl font-serif mb-4 text-black">{alertDialog.title}</h3>
+              <p className="text-gray-600 mb-8 font-light leading-relaxed">{alertDialog.message}</p>
+              <button 
+                onClick={() => setAlertDialog(null)}
+                className="w-full bg-black text-white py-3 text-[10px] uppercase font-bold tracking-widest hover:bg-gray-800 transition-colors"
+               >
+                 OK
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Modal */}
+      {confirmDialog && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full shadow-2xl relative">
+            <button 
+              onClick={() => setConfirmDialog(null)}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-black transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="p-8">
+              <h3 className="text-xl font-serif mb-4 text-black">{confirmDialog.title}</h3>
+              <p className="text-gray-600 mb-8 font-light leading-relaxed">{confirmDialog.message}</p>
+              
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setConfirmDialog(null)}
+                  className="flex-1 border border-gray-200 bg-white text-black py-3 text-[10px] uppercase font-bold tracking-widest hover:bg-gray-50 transition-colors"
+                 >
+                   Zrušit
+                 </button>
+                 <button 
+                  onClick={() => {
+                    confirmDialog.onConfirm();
+                    setConfirmDialog(null);
+                  }}
+                  className="flex-1 bg-black text-white py-3 text-[10px] uppercase font-bold tracking-widest hover:bg-amber-900 transition-colors"
+                 >
+                   {confirmDialog.confirmText}
+                 </button>
+              </div>
             </div>
           </div>
         </div>
