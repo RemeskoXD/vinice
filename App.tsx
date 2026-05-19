@@ -98,15 +98,15 @@ const Navbar: React.FC = () => {
             
             {/* Socials in Desktop Nav */}
             <div className="flex items-center space-x-4 pl-4 border-l border-gray-200">
-               <a href="https://facebook.com" target="_blank" rel="noreferrer" className="hover:text-amber-600 transition-colors"><Facebook size={18} strokeWidth={1.5} /></a>
-               <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-amber-600 transition-colors"><Instagram size={18} strokeWidth={1.5} /></a>
+               <a href="https://www.facebook.com/people/V-srdci-vinic-Mut%C4%9Bnice/61586254905253/" target="_blank" rel="noreferrer" className="hover:text-amber-600 transition-colors"><Facebook size={18} strokeWidth={1.5} /></a>
+               <a href="https://www.instagram.com/vsrdci_vinic/" target="_blank" rel="noreferrer" className="hover:text-amber-600 transition-colors"><Instagram size={18} strokeWidth={1.5} /></a>
             </div>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="flex items-center lg:hidden gap-4">
-            <a href="https://facebook.com" target="_blank" rel="noreferrer" className={`${burgerColor} hover:text-amber-600 transition-colors shrink-0`}><Facebook size={20} strokeWidth={1.5} /></a>
-            <a href="https://instagram.com" target="_blank" rel="noreferrer" className={`${burgerColor} hover:text-amber-600 transition-colors shrink-0`}><Instagram size={20} strokeWidth={1.5} /></a>
+            <a href="https://www.facebook.com/people/V-srdci-vinic-Mut%C4%9Bnice/61586254905253/" target="_blank" rel="noreferrer" className={`${burgerColor} hover:text-amber-600 transition-colors shrink-0`}><Facebook size={20} strokeWidth={1.5} /></a>
+            <a href="https://www.instagram.com/vsrdci_vinic/" target="_blank" rel="noreferrer" className={`${burgerColor} hover:text-amber-600 transition-colors shrink-0`}><Instagram size={20} strokeWidth={1.5} /></a>
             <button
               onClick={() => setIsOpen(!isOpen)}
               className={`inline-flex items-center justify-center p-2 transition-colors ${burgerColor}`}
@@ -154,8 +154,8 @@ const Footer: React.FC = () => {
               Mutěnice - Jihomoravský kraj.
             </p>
             <div className="flex space-x-4">
-              <a href="https://facebook.com" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-black transition-colors"><Facebook size={20} strokeWidth={1.5} /></a>
-              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-black transition-colors"><Instagram size={20} strokeWidth={1.5} /></a>
+              <a href="https://www.facebook.com/people/V-srdci-vinic-Mut%C4%9Bnice/61586254905253/" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-black transition-colors"><Facebook size={20} strokeWidth={1.5} /></a>
+              <a href="https://www.instagram.com/vsrdci_vinic/" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-black transition-colors"><Instagram size={20} strokeWidth={1.5} /></a>
             </div>
           </div>
           

@@ -5,14 +5,34 @@ import path from 'path';
 import fs from 'fs';
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  auth: {
-    user: process.env.SMTP_USER || 'test@ethereal.email',
-    pass: process.env.SMTP_PASS || 'pass123'
-  }
-});
+let transporter: nodemailer.Transporter;
+
+if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: parseInt(process.env.SMTP_PORT || '587') === 465, // true for 465, false for other ports
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    },
+    tls: {
+      rejectUnauthorized: false
+    }
+  });
+} else {
+  nodemailer.createTestAccount().then((testAccount) => {
+    transporter = nodemailer.createTransport({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      secure: false,
+      auth: {
+        user: testAccount.user,
+        pass: testAccount.pass
+      }
+    });
+  }).catch(console.error);
+}
 
 const dbPath = process.env.DB_PATH || 'bookings.db';
 const dbDir = path.dirname(dbPath);
@@ -205,27 +225,91 @@ async function startServer() {
       
       if (customerEmail) {
         try {
+          const textVersion = `
+Vážený zákazníku ${customerName},
+
+Vaši poptávku jsme úspěšně přijali. Během 48 hodin Vám potvrdíme rezervaci.
+
+Užitečné informace pro Váš pobyt:
+- Kuřáci u nás najdou azyl na terase. Vnitřní prostory jsou plně nekuřácké, ale elektronické cigarety jsou povoleny.
+- Víno s sebou nevozte, ve sklepě ho máme pro Vás připraveno dostatek! :D
+
+Odkaz na QR platbu zálohy (50 %): https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SPD*1.0*ACC%3ACZ8555000000008029338001*MSG%3AZaloha%20ubytovani
+Nebo prosím zašlete platbu bankovním převodem na účet:
+Číslo účtu: 8029338001/5500
+Banka: Raiffeisenbank
+IBAN: CZ85 5500 0000 0080 2933 8001
+SWIFT/BIC: RZBCCZPP
+
+Vybraný způsob doplatku zbylých 50 %: ${paymentMethod}
+
+Ubytovatelé na Vás budou čekat. 
+
+Fakturační a ubytovací údaje:
+V SRDCI VINIC
+Sklepní ulice
+696 11 Mutěnice
+
+Storno podmínky:
+Při zrušení rezervace méně než 7 dní před příjezdem je záloha nevratná. Děkujeme za pochopení.
+
+Těšíme se na Váš pobyt!
+
+S pozdravem,
+V SRDCI VINIC
+`.trim();
+
           const mailOptions = {
             from: process.env.SMTP_USER || '"V SRDCI VINIC" <info@vsrdcivinic.cz>',
             to: customerEmail,
             subject: 'Potvrzení poptávky ubytování - V SRDCI VINIC',
+            text: textVersion,
             html: `
+              <html><body>
               <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-                <h2 style="color: #b45309;">Děkujeme za Vaši rezervaci!</h2>
+                <h2 style="color: #b45309;">Děkujeme za Vaši poptávku ubytování!</h2>
                 <p>Vážený zákazníku ${customerName},</p>
                 <p>Vaši poptávku jsme úspěšně přijali. Během <b>48 hodin</b> Vám potvrdíme rezervaci.</p>
-                <p>Pro závazné potvrzení prosíme o uhrazení zálohy (50 %). Zde je QR kód pro zjednodušení platby:</p>
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=MOCK_PLATBA_50_PROCENT" alt="QR kód pro platbu zálohy" style="display: block; margin: 20px auto; width: 150px; height: 150px;" />
+                <div style="background: #fdf5e6; border-left: 4px solid #b45309; padding: 15px; margin: 20px 0;">
+                  <p style="margin: 0 0 10px 0;"><b>Užitečné informace pro Váš pobyt:</b></p>
+                  <ul style="margin: 0; padding-left: 20px;">
+                    <li style="margin-bottom: 5px;">Kuřáci u nás najdou azyl na terase. Vnitřní prostory jsou plně nekuřácké, ale elektronické cigarety jsou povoleny.</li>
+                    <li>Víno s sebou nevozte, ve sklepě ho máme pro Vás připraveno dostatek! :D</li>
+                  </ul>
+                </div>
+                <p>Pro závazné potvrzení prosíme o uhrazení zálohy (50 %). Zde je QR kód pro platbu, nebo můžete využít bankovní údaje níže:</p>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SPD*1.0*ACC%3ACZ8555000000008029338001*MSG%3AZaloha%20ubytovani" alt="QR kód pro platbu zálohy" style="display: block; margin: 20px auto; width: 150px; height: 150px;" />
+                <div style="background: #f9fafb; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                  <p style="margin: 0 0 5px 0;"><b>Číslo účtu:</b> 8029338001/5500</p>
+                  <p style="margin: 0 0 5px 0;"><b>Banka:</b> Raiffeisenbank</p>
+                  <p style="margin: 0 0 5px 0;"><b>IBAN:</b> CZ85 5500 0000 0080 2933 8001</p>
+                  <p style="margin: 0;"><b>SWIFT/BIC:</b> RZBC CZ PP</p>
+                </div>
                 <p>Vybraný způsob doplatku zbylých 50 %: <b>${paymentMethod}</b></p>
+                
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 13px; color: #555;">
+                  <p><b>Důležité informace a podmínky dodání</b></p>
+                  <p><b>Adresa ubytování:</b><br />
+                  V SRDCI VINIC<br />
+                  Sklepní ulice<br />
+                  696 11 Mutěnice</p>
+                  <p><b>Storno podmínky:</b><br />
+                  V případě zrušení rezervace do 7 dnů před plánovaným příjezdem je záloha nevratná. Pokud zrušíte dříve, celou zálohu bez prodlení vrátíme. Děkujeme za respektování našich pravidel.</p>
+                </div>
+                
                 <p>Těšíme se na Váš pobyt!</p>
                 <br />
                 <p>S pozdravem,</p>
                 <p><b>V SRDCI VINIC</b></p>
               </div>
+              </body></html>
             `
           };
-          await transporter.sendMail(mailOptions);
+          const info = await transporter.sendMail(mailOptions);
           console.log(`Poptávkový e-mail odeslán na ${customerEmail}`);
+          if (info.messageId && !process.env.SMTP_HOST) {
+            console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+          }
         } catch (mailError) {
           console.error('Email send error:', mailError);
         }
@@ -261,8 +345,76 @@ async function startServer() {
       // Pokud je stav 'confirmed' a máme email, nasimulujeme odeslání/zaprotokolování
       if (status === 'confirmed' && booking.customerEmail && booking.customerEmail !== 'admin@local') {
           console.log(`[AUTOMAT] Odesílám potvrzovací e-mail pro: ${booking.customerEmail}`);
-          // Poznámka: Reálné odesílání e-mailů by v produkci vyžadovalo nastavení SMTP (např. přes nodemailer)
-          // Zde implementujeme logiku, kterou uživatel uvidí jako "automat"
+          try {
+            const textVersionPotvrzeni = `
+Vážený zákazníku ${booking.customerName},
+
+velmi nás to těší, Vaše rezervace v termínu ${booking.startDate} - ${booking.endDate} byla právě závazně potvrzena.
+
+Užitečné informace pro Váš pobyt:
+- Kuřáci u nás najdou azyl na terase. Vnitřní prostory jsou plně nekuřácké, ale elektronické cigarety jsou povoleny.
+- Víno s sebou nevozte, ve sklepě ho máme pro Vás připraveno dostatek! :D
+
+Na místě na Vás bude čekat ubytovatel, který Vám předá klíče a ukáže Vám prostory včetně našeho vinného sklípku.
+
+Fakturační a ubytovací údaje:
+V SRDCI VINIC
+Sklepní ulice
+696 11 Mutěnice
+
+Storno podmínky: Při zrušení méně než 7 dní před příjezdem propadá záloha.
+
+Těšíme se na Vás!
+
+S pozdravem,
+V SRDCI VINIC
+`.trim();
+
+            const mailOptions = {
+              from: process.env.SMTP_USER || '"V SRDCI VINIC" <info@vsrdcivinic.cz>',
+              to: booking.customerEmail,
+              subject: 'Potvrzení rezervace ubytování - V SRDCI VINIC',
+              text: textVersionPotvrzeni,
+              html: `
+                <html>
+                <body>
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                  <h2 style="color: #166534;">Vaše rezervace byla potvrzena!</h2>
+                  <p>Vážený zákazníku ${booking.customerName},</p>
+                  <p>velmi nás to těší, Vaše rezervace v termínu <b>${booking.startDate} - ${booking.endDate}</b> byla právě závazně potvrzena.</p>
+                  <div style="background: #fdf5e6; border-left: 4px solid #b45309; padding: 15px; margin: 20px 0;">
+                    <p style="margin: 0 0 10px 0;"><b>Užitečné informace pro Váš pobyt:</b></p>
+                    <ul style="margin: 0; padding-left: 20px;">
+                      <li style="margin-bottom: 5px;">Kuřáci u nás najdou azyl na terase. Vnitřní prostory jsou plně nekuřácké, ale elektronické cigarety jsou povoleny.</li>
+                      <li>Víno s sebou nevozte, ve sklepě ho máme pro Vás připraveno dostatek! :D</li>
+                    </ul>
+                  </div>
+                  
+                  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 13px; color: #555;">
+                    <p><b>Důležité informace a kontakt:</b></p>
+                    <p><b>Místo pobytu:</b><br />
+                    V SRDCI VINIC<br />
+                    Sklepní ulice<br />
+                    696 11 Mutěnice</p>
+                  </div>
+                  
+                  <p>Těšíme se na Vás!</p>
+                  <br />
+                  <p>S pozdravem,</p>
+                  <p><b>V SRDCI VINIC</b></p>
+                </div>
+                </body>
+                </html>
+              `
+            };
+            const info = await transporter.sendMail(mailOptions);
+            console.log(`Potvrzovací e-mail odeslán na ${booking.customerEmail}`);
+            if (info.messageId && !process.env.SMTP_HOST) {
+              console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+            }
+          } catch (mailError) {
+            console.error('Email send error:', mailError);
+          }
       }
 
       res.json({ success: true });
@@ -279,30 +431,232 @@ async function startServer() {
       if (!booking.customerEmail || booking.customerEmail === 'admin@local') return res.status(400).json({ error: 'No valid email attached to this booking' });
 
       try {
+        const textVersionThanks = `
+Vážený zákazníku ${booking.customerName},
+
+děkujeme, že jste si vybrali naše ubytování V SRDCI VINIC.
+
+Pokud bylo vše v pořádku, budeme moc rádi, když nás doporučíte svým přátelům nebo nám zanecháte recenzi na našem Instagramu:
+👉 https://www.instagram.com/vsrdci_vinic/
+
+Zpětnou vazbu uvítáme, pomáhá nám to poskytovat ještě lepší péči.
+
+Těšíme se na Vaši případnou další návštěvu!
+
+S pozdravem,
+V SRDCI VINIC
+Sklepní ulice
+696 11 Mutěnice
+`.trim();
+
         const mailOptions = {
           from: process.env.SMTP_USER || '"V SRDCI VINIC" <info@vsrdcivinic.cz>',
           to: booking.customerEmail,
           subject: 'Děkujeme za návštěvu - V SRDCI VINIC',
+          text: textVersionThanks,
           html: `
+            <html>
+            <body>
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
               <h2 style="color: #b45309;">Děkujeme za návštěvu!</h2>
               <p>Vážený zákazníku ${booking.customerName},</p>
               <p>děkujeme, že jste si vybrali naše ubytování V SRDCI VINIC.</p>
-              <p>Pokud bylo vše v pořádku, budeme moc rádi, když nás doporučíte svým přátelům.</p>
+              <p>Pokud bylo vše v pořádku, budeme moc rádi, když nás doporučíte svým přátelům nebo nám zanecháte recenzi. Veškerá zpětná vazba je pro nás nesmírně ceněná.</p>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="https://www.instagram.com/vsrdci_vinic/" style="background-color: #b45309; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Napsat recenzi na Instagram</a>
+              </div>
+              
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 13px; color: #555;">
+                    <p><b>Kontaktní údaje:</b></p>
+                    <p>V SRDCI VINIC<br />
+                    Sklepní ulice<br />
+                    696 11 Mutěnice</p>
+              </div>
+              
               <p>Těšíme se na Vaši případnou další návštěvu!</p>
               <br />
               <p>S pozdravem,</p>
               <p><b>V SRDCI VINIC</b></p>
             </div>
+            </body>
+            </html>
           `
         };
-        await transporter.sendMail(mailOptions);
+        const info = await transporter.sendMail(mailOptions);
         console.log(`Poděkování e-mailem odesláno na ${booking.customerEmail}`);
+        if (info.messageId && !process.env.SMTP_HOST) {
+          console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+        }
         res.json({ success: true });
       } catch (mailError) {
         console.error('Email send error:', mailError);
         res.status(500).json({ error: 'Failed to send polite email' });
       }
+    } catch (error) {
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  app.post('/api/bookings/:id/send-deposit-paid', async (req, res) => {
+    const { id } = req.params;
+    try {
+      const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(id) as any;
+      if (!booking) return res.status(404).json({ error: 'Booking not found' });
+      if (!booking.customerEmail || booking.customerEmail === 'admin@local') return res.status(400).json({ error: 'No valid email attached to this booking' });
+
+      try {
+        const textVersion = `
+Vážený zákazníku ${booking.customerName},
+
+potvrzujeme přijetí zálohy na Váš pobyt ve V SRDCI VINIC.
+Termín Vašeho pobytu: ${booking.startDate} - ${booking.endDate}
+
+Těšíme se na Vás!
+
+S pozdravem,
+V SRDCI VINIC
+`.trim();
+
+        const mailOptions = {
+          from: process.env.SMTP_USER || '"V SRDCI VINIC" <info@vsrdcivinic.cz>',
+          to: booking.customerEmail,
+          subject: 'Záloha přijata - V SRDCI VINIC',
+          text: textVersion,
+          html: `
+            <html><body>
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+              <h2 style="color: #166534;">Záloha byla úspěšně přijata!</h2>
+              <p>Vážený zákazníku ${booking.customerName},</p>
+              <p>potvrzujeme přijetí zálohy na Váš pobyt u nás.</p>
+              <p>Váš termín pobytu: <b>${booking.startDate} - ${booking.endDate}</b></p>
+              <p>Těšíme se na Vás!</p>
+              <br />
+              <p>S pozdravem,</p>
+              <p><b>V SRDCI VINIC</b></p>
+            </div></body></html>
+          `
+        };
+        const info = await transporter.sendMail(mailOptions);
+        if (info.messageId && !process.env.SMTP_HOST) {
+          console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+        }
+        res.json({ success: true });
+      } catch (mailError) {
+        console.error('Email send error:', mailError);
+        res.status(500).json({ error: 'Failed to send email' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  app.post('/api/bookings/:id/send-fully-paid', async (req, res) => {
+    const { id } = req.params;
+    try {
+      const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(id) as any;
+      if (!booking) return res.status(404).json({ error: 'Booking not found' });
+      if (!booking.customerEmail || booking.customerEmail === 'admin@local') return res.status(400).json({ error: 'No valid email attached to this booking' });
+
+      try {
+        const textVersion = `
+Vážený zákazníku ${booking.customerName},
+
+potvrzujeme úhradu celé částky za Váš pobyt ve V SRDCI VINIC.
+Vše je tedy nyní zaplaceno, velmi Vám děkujeme.
+
+Pokud máte další dotazy, neváhejte nás kontaktovat.
+
+S pozdravem,
+V SRDCI VINIC
+`.trim();
+
+        const mailOptions = {
+          from: process.env.SMTP_USER || '"V SRDCI VINIC" <info@vsrdcivinic.cz>',
+          to: booking.customerEmail,
+          subject: 'Pobyt plně uhrazen - V SRDCI VINIC',
+          text: textVersion,
+          html: `
+            <html><body>
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+              <h2 style="color: #166534;">Pobyt plně uhrazen!</h2>
+              <p>Vážený zákazníku ${booking.customerName},</p>
+              <p>potvrzujeme přijetí úhrady celé částky za Váš pobyt.</p>
+              <p>Vše je tedy nyní v pořádku zaplaceno, velmi Vám děkujeme.</p>
+              <br />
+              <p>S pozdravem,</p>
+              <p><b>V SRDCI VINIC</b></p>
+            </div></body></html>
+          `
+        };
+        const info = await transporter.sendMail(mailOptions);
+        if (info.messageId && !process.env.SMTP_HOST) {
+          console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+        }
+        res.json({ success: true });
+      } catch (mailError) {
+        console.error('Email send error:', mailError);
+        res.status(500).json({ error: 'Failed to send email' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  app.post('/api/bookings/:id/cancel-with-message', async (req, res) => {
+    const { id } = req.params;
+    const { message } = req.body;
+    try {
+      const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(id) as any;
+      if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+      const stmt = db.prepare('UPDATE bookings SET status = ? WHERE id = ?');
+      stmt.run('cancelled', id);
+
+      if (booking.customerEmail && booking.customerEmail !== 'admin@local') {
+        try {
+          const textVersion = `
+Vážený zákazníku ${booking.customerName},
+
+Vaše rezervace v termínu ${booking.startDate} - ${booking.endDate} ubytování V SRDCI VINIC byla stornována.
+
+Případná poznámka ubytovatele:
+${message || 'Bez další poznámky'}
+
+S pozdravem,
+V SRDCI VINIC
+`.trim();
+
+          const mailOptions = {
+            from: process.env.SMTP_USER || '"V SRDCI VINIC" <info@vsrdcivinic.cz>',
+            to: booking.customerEmail,
+            subject: 'Zrušení rezervace ubytování - V SRDCI VINIC',
+            text: textVersion,
+            html: `
+              <html><body>
+              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                <h2 style="color: #dc2626;">Vaše rezervace byla stornována!</h2>
+                <p>Vážený zákazníku ${booking.customerName},</p>
+                <p>Vaše rezervace v termínu <b>${booking.startDate} - ${booking.endDate}</b> byla stornována.</p>
+                <div style="background: #fdf2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
+                  <p style="margin: 0 0 10px 0;"><b>Zpráva ubytovatele:</b></p>
+                  <p style="margin: 0; white-space: pre-wrap;">${message || 'Bez další poznámky'}</p>
+                </div>
+                <br />
+                <p>S pozdravem,</p>
+                <p><b>V SRDCI VINIC</b></p>
+              </div></body></html>
+            `
+          };
+          const info = await transporter.sendMail(mailOptions);
+          if (info.messageId && !process.env.SMTP_HOST) {
+            console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+          }
+        } catch (mailError) {
+          console.error('Email send error:', mailError);
+        }
+      }
+      res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: 'Database error' });
     }

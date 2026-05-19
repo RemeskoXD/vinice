@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { cs } from 'date-fns/locale';
-import { Trash2, Plus, Users, Calendar, TrendingUp, Phone, Mail, MessageSquare, X, Landmark, Receipt, Edit2 } from 'lucide-react';
+import { Trash2, Plus, Users, Calendar, TrendingUp, Phone, Mail, MessageSquare, X, Landmark, Receipt, Edit2, Eye, CheckCircle, CheckSquare } from 'lucide-react';
 
 interface Booking {
   id: number;
@@ -70,6 +70,11 @@ const Admin: React.FC = () => {
   const [editingPromoId, setEditingPromoId] = useState<number | null>(null);
 
   const [showPaymentFor, setShowPaymentFor] = useState<Booking | null>(null);
+  const [showDetailsFor, setShowDetailsFor] = useState<Booking | null>(null);
+  const [cancelBookingFor, setCancelBookingFor] = useState<Booking | null>(null);
+  const [cancelMessage, setCancelMessage] = useState('');
+  
+  const [sendingAction, setSendingAction] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -145,6 +150,54 @@ const Admin: React.FC = () => {
       fetchBookings();
     } catch (error) {
       alert('Chyba při stornování');
+    }
+  };
+
+  const handleCancelWithMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cancelBookingFor) return;
+    try {
+      setSendingAction('cancel');
+      await fetch(`/api/bookings/${cancelBookingFor.id}/cancel-with-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: cancelMessage })
+      });
+      fetchBookings();
+      setCancelBookingFor(null);
+      setCancelMessage('');
+    } catch (error) {
+      alert('Chyba při stornování');
+    } finally {
+      setSendingAction(null);
+    }
+  };
+
+  const handleSendDepositPaid = async (id: number) => {
+    if (!confirm('Odeslat potvrzení o přijetí zálohy hostovi na e-mail?')) return;
+    setSendingAction(`deposit-${id}`);
+    try {
+      const res = await fetch(`/api/bookings/${id}/send-deposit-paid`, { method: 'POST' });
+      if (res.ok) alert('Potvrzení úspěšně odesláno.');
+      else alert('E-mail se nepodařilo odeslat.');
+    } catch (error) {
+      alert('Chyba při odesílání e-mailu.');
+    } finally {
+      setSendingAction(null);
+    }
+  };
+
+  const handleSendFullyPaid = async (id: number) => {
+    if (!confirm('Odeslat potvrzení o plné úhradě hostovi na e-mail?')) return;
+    setSendingAction(`fully-${id}`);
+    try {
+      const res = await fetch(`/api/bookings/${id}/send-fully-paid`, { method: 'POST' });
+      if (res.ok) alert('Poděkování úspěšně odesláno.');
+      else alert('E-mail se nepodařilo odeslat.');
+    } catch (error) {
+      alert('Chyba při odesílání e-mailu.');
+    } finally {
+      setSendingAction(null);
     }
   };
 
@@ -524,48 +577,81 @@ const Admin: React.FC = () => {
                           )}
                         </td>
                         <td className="py-6 text-right align-top">
-                          <div className="flex justify-end items-center gap-2">
-                            {booking.status === 'pending' && (
+                            <div className="flex justify-end items-center gap-1.5 flex-wrap w-full">
                               <button 
-                                onClick={() => handleConfirm(booking.id)}
-                                className="bg-green-600 text-white p-2 text-[10px] uppercase font-bold tracking-widest px-4 hover:bg-green-700 transition-all rounded-sm shadow-sm"
-                                title="Potvrdit rezervaci"
+                                onClick={() => setShowDetailsFor(booking)}
+                                className="bg-white border border-gray-100 p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all rounded-sm shadow-sm flex items-center"
+                                title="Detail rezervace (Očičko)"
                               >
-                                Potvrdit
+                                <Eye size={16} strokeWidth={1.5} />
                               </button>
-                            )}
-                            {booking.status !== 'cancelled' && (
+                              
+                              {booking.status === 'pending' && (
+                                <button 
+                                  onClick={() => handleConfirm(booking.id)}
+                                  className="bg-green-600 text-white p-2 text-[10px] uppercase font-bold tracking-widest hover:bg-green-700 transition-all rounded-sm shadow-sm"
+                                  title="Potvrdit rezervaci"
+                                >
+                                  Potvrdit
+                                </button>
+                              )}
+                              
+                              {booking.status === 'confirmed' && (
+                                <>
+                                  <button 
+                                    onClick={() => handleSendDepositPaid(booking.id)}
+                                    disabled={sendingAction === `deposit-${booking.id}`}
+                                    className={`bg-white border border-amber-200 p-2 text-[10px] uppercase font-bold tracking-widest transition-all rounded-sm shadow-sm ${sendingAction === `deposit-${booking.id}` ? 'text-gray-300' : 'text-amber-700 hover:bg-amber-50'}`}
+                                    title="Záloha zaplacena a potvrzení termínu"
+                                  >
+                                    <CheckSquare size={14} className="inline mr-1" />Záloha
+                                  </button>
+                                  <button 
+                                    onClick={() => handleSendFullyPaid(booking.id)}
+                                    disabled={sendingAction === `fully-${booking.id}`}
+                                    className={`bg-white border border-green-200 p-2 text-[10px] uppercase font-bold tracking-widest transition-all rounded-sm shadow-sm ${sendingAction === `fully-${booking.id}` ? 'text-gray-300' : 'text-green-700 hover:bg-green-50'}`}
+                                    title="Zaplaceno vše, potvrzení platby"
+                                  >
+                                    <CheckCircle size={14} className="inline mr-1" />Více / Vše
+                                  </button>
+                                </>
+                              )}
+
+                              {booking.status !== 'cancelled' && (
+                                <button 
+                                  onClick={() => setCancelBookingFor(booking)}
+                                  className="bg-white border border-gray-200 p-2 text-[10px] uppercase font-bold tracking-widest text-red-600 hover:bg-red-50 transition-all rounded-sm shadow-sm"
+                                  title="Stornovat rezervaci se zprávou"
+                                >
+                                  Storno
+                                </button>
+                              )}
+                              
                               <button 
-                                onClick={() => handleCancel(booking.id)}
-                                className="bg-white border border-gray-200 p-2 text-[10px] uppercase font-bold tracking-widest px-4 text-red-600 hover:bg-red-50 transition-all rounded-sm shadow-sm"
-                                title="Stornovat rezervaci"
+                                onClick={() => setShowPaymentFor(booking)}
+                                className="bg-white border border-gray-100 p-2 text-gray-400 hover:text-amber-700 hover:bg-amber-50/50 transition-all rounded-sm shadow-sm"
+                                title="Vygenerovat podklady k platbě"
                               >
-                                Storno
+                                <Receipt size={16} strokeWidth={1.5} />
                               </button>
-                            )}
-                            <button 
-                              onClick={() => setShowPaymentFor(booking)}
-                              className="bg-white border border-gray-100 p-2.5 text-gray-400 hover:text-amber-700 hover:border-amber-100 hover:bg-amber-50/50 transition-all rounded-sm shadow-sm"
-                              title="Vygenerovat podklady k platbě"
-                            >
-                              <Receipt size={16} strokeWidth={1.5} />
-                            </button>
-                            <button 
-                              onClick={() => handleSendThanks(booking.id)}
-                              disabled={sendingThanks === booking.id}
-                              className={`bg-white border border-gray-100 p-2.5 transition-all rounded-sm shadow-sm ${sendingThanks === booking.id ? 'text-gray-300' : 'text-gray-400 hover:text-amber-700 hover:border-amber-100 hover:bg-amber-50/50'}`}
-                              title="Odeslat e-mail 'Děkujeme za návštěvu'"
-                            >
-                              <Mail size={16} strokeWidth={1.5} />
-                            </button>
-                            <button 
-                              onClick={() => handleDelete(booking.id)}
-                              className="bg-white border border-gray-100 p-2.5 text-gray-300 hover:text-red-700 hover:border-red-100 hover:bg-red-50/50 transition-all rounded-sm shadow-sm"
-                              title="Odstranit záznam"
-                            >
-                              <Trash2 size={16} strokeWidth={1.5} />
-                            </button>
-                          </div>
+                              
+                              <button 
+                                onClick={() => handleSendThanks(booking.id)}
+                                disabled={sendingThanks === booking.id}
+                                className={`bg-white border border-gray-100 p-2 transition-all rounded-sm shadow-sm flex items-center ${sendingThanks === booking.id ? 'text-gray-300' : 'text-gray-400 hover:text-amber-700 hover:bg-amber-50/50'}`}
+                                title="Odeslat e-mail 'Děkujeme za návštěvu' (recenze na IG)"
+                              >
+                                <Mail size={16} strokeWidth={1.5} />
+                              </button>
+                              
+                              <button 
+                                onClick={() => handleDelete(booking.id)}
+                                className="bg-white border border-gray-100 p-2 text-gray-300 hover:text-red-700 hover:bg-red-50/50 transition-all rounded-sm shadow-sm"
+                                title="Odstranit záznam kompletně"
+                              >
+                                <Trash2 size={16} strokeWidth={1.5} />
+                              </button>
+                            </div>
                         </td>
                       </tr>
                     ))}
@@ -886,6 +972,138 @@ const Admin: React.FC = () => {
                 className="w-full mt-8 bg-black text-white py-4 text-[10px] uppercase font-bold tracking-widest hover:bg-amber-900 transition-colors"
                >
                  Zavřít podklady
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Booking Modal */}
+      {cancelBookingFor && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-lg w-full shadow-2xl relative">
+            <button 
+              onClick={() => {
+                setCancelBookingFor(null);
+                setCancelMessage('');
+              }}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-black transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="p-8 md:p-12">
+              <h3 className="text-2xl font-serif mb-2 text-red-600">Stornovat rezervaci</h3>
+              <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-8">
+                Host: <span className="text-black">{cancelBookingFor.customerName}</span>
+              </p>
+              
+              <form onSubmit={handleCancelWithMessage}>
+                <div className="mb-6 border border-red-100 bg-red-50/50 p-4 rounded-sm">
+                  <label className="block text-[10px] uppercase tracking-widest text-gray-600 font-bold mb-3">Zpráva zákazníkovi k důvodu stornování (volitelné)</label>
+                  <textarea 
+                    rows={4} 
+                    value={cancelMessage}
+                    onChange={e => setCancelMessage(e.target.value)}
+                    placeholder="Např. Bohužel Vám musíme stornovat termín z důvodu nemoci... (Text bude součástí e-mailu)"
+                    className="w-full border border-red-200 bg-white p-3 focus:outline-none focus:border-red-500 font-light text-sm shadow-inner"
+                  />
+                </div>
+                
+                <p className="text-xs text-gray-500 mb-6 flex items-start gap-2 leading-relaxed">
+                   <CheckSquare size={16} className="text-red-500 shrink-0 mt-0.5" />
+                   <span>Kliknutím na tlačítko se rezervace trvale změní na "Stornováno" a zákazníkovi odejde e-mail s Vaší případnou poznámkou.</span>
+                </p>
+
+                <button 
+                  type="submit"
+                  disabled={sendingAction === 'cancel'}
+                  className={`w-full text-white py-4 text-[10px] uppercase font-bold tracking-widest transition-colors shadow-lg ${sendingAction === 'cancel' ? 'bg-gray-400' : 'bg-red-600 hover:bg-red-700'}`}
+                 >
+                   {sendingAction === 'cancel' ? 'Odesílám...' : 'Potvrdit storno a odeslat e-mail'}
+                 </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Booking Modal (Eye) */}
+      {showDetailsFor && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-2xl w-full shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button 
+              onClick={() => setShowDetailsFor(null)}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-black transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="p-8 md:p-12">
+              <h3 className="text-2xl font-serif mb-2 text-black flex items-center gap-3">
+                 <Eye className="text-amber-700" size={24} /> Detail rezervace
+              </h3>
+              <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-8">
+                ID: <span className="text-black">#{showDetailsFor.id}</span>
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Host</p>
+                  <p className="text-lg font-serif">{showDetailsFor.customerName}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Termín</p>
+                  <p className="font-bold whitespace-nowrap">{format(new Date(showDetailsFor.startDate), 'd. M. yyyy')} – {format(new Date(showDetailsFor.endDate), 'd. M. yyyy')}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 text-sm">
+                <div className="flex items-center gap-4 bg-gray-50 border border-gray-100 p-5 rounded-sm">
+                   <Mail className="text-amber-700 shrink-0" size={20} />
+                   <div>
+                     <span className="block text-[10px] text-gray-400 uppercase tracking-widest font-bold">E-mail</span>
+                     <span className="font-medium text-black">{showDetailsFor.customerEmail || 'Nevyplněn'}</span>
+                   </div>
+                </div>
+
+                <div className="flex items-center gap-4 bg-gray-50 border border-gray-100 p-5 rounded-sm">
+                   <Phone className="text-amber-700 shrink-0" size={20} />
+                   <div>
+                     <span className="block text-[10px] text-gray-400 uppercase tracking-widest font-bold">Telefon</span>
+                     <span className="font-medium text-black">{showDetailsFor.customerPhone || 'Nevyplněn'}</span>
+                   </div>
+                </div>
+
+                <div className="flex items-center gap-4 bg-gray-50 border border-gray-100 p-5 rounded-sm">
+                   <Users className="text-amber-700 shrink-0" size={20} />
+                   <div>
+                     <span className="block text-[10px] text-gray-400 uppercase tracking-widest font-bold">Počet osob</span>
+                     <span className="font-medium text-black">{showDetailsFor.guests || 2}</span>
+                   </div>
+                </div>
+
+                <div className="flex items-center gap-4 bg-gray-50 border border-gray-100 p-5 rounded-sm">
+                   <Landmark className="text-amber-700 shrink-0" size={20} />
+                   <div>
+                     <span className="block text-[10px] text-gray-400 uppercase tracking-widest font-bold">Preferovaná platba doplatku</span>
+                     <span className="font-medium text-black">{showDetailsFor.paymentMethod || 'Nevyplněna'}</span>
+                   </div>
+                </div>
+                
+                {showDetailsFor.notes && (
+                  <div className="bg-amber-50/50 border border-amber-100 p-6 rounded-sm mt-8">
+                    <span className="text-[10px] text-amber-900 uppercase tracking-[0.2em] font-bold mb-3 flex items-center gap-2">
+                       <MessageSquare size={14} /> Poznámka od hosta
+                    </span>
+                    <p className="text-gray-700 italic font-light leading-relaxed">{showDetailsFor.notes}</p>
+                  </div>
+                )}
+              </div>
+
+              <button 
+                onClick={() => setShowDetailsFor(null)}
+                className="w-full mt-10 bg-black text-white py-4 text-[10px] uppercase font-bold tracking-widest hover:bg-amber-900 transition-colors shadow-lg shadow-black/10"
+               >
+                 Zavřít detail
                </button>
             </div>
           </div>
